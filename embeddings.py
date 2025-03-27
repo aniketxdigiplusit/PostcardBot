@@ -7,10 +7,10 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 def load_encoded_vectors(path):
     with open(path, "r") as f:
         data = json.load(f)
-    
+
     labels = [item["label"] for item in data]
     vectors = [item["vector"] for item in data]
-    
+
     return labels, torch.tensor(vectors)
 
 def semantic_match(query: str, labels, vectors, top_k=3, threshold=0.5):
@@ -19,7 +19,10 @@ def semantic_match(query: str, labels, vectors, top_k=3, threshold=0.5):
 
     top_results = torch.topk(cosine_scores, k=top_k)
     
-    matches = [(labels[idx], float(score)) for score, idx in zip(top_results.values, top_results.indices) if score >= threshold]
+    matches = []
+    for score, idx in zip(top_results.values, top_results.indices):
+        if score >= threshold:
+            matches.append((labels[idx], float(score)))
     
     return matches
 

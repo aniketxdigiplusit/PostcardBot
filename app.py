@@ -1,10 +1,21 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from models import db
 from routes.chat_routes import chat_blueprint
 
 app = Flask(__name__)
 
-# Register the blueprint with a prefix `/chat`
-app.register_blueprint(chat_blueprint, url_prefix='/chat')
+# SQLite Database Configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///chat.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-if __name__ == '__main__':
+db.init_app(app)
+migrate = Migrate(app, db)
+
+app.register_blueprint(chat_blueprint, url_prefix="/chat")
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()  # Ensure database tables are created
     app.run(debug=True)

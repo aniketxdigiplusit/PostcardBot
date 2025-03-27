@@ -3,7 +3,8 @@ import re
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.prompts import PromptTemplate
 from config.settings import sllm
-from models.embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
+from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
+from utils.helpers import system_prompt
 
 def normalize_entities(state: dict):
     prompt = PromptTemplate.from_template(
@@ -47,6 +48,9 @@ Example:
 
     matched_locations = semantic_match(" ".join(user_locations), location_labels, location_vectors)
     matched_activities = semantic_match(" ".join(user_activities), activity_labels, activity_vectors)
+
+    print(user_locations, user_activities)
+    print(matched_locations, matched_activities)
 
     state["matched_locations"] = matched_locations
     state["matched_activities"] = matched_activities

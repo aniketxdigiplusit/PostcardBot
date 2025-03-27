@@ -1,5 +1,5 @@
 from qdrant_client import QdrantClient
-from models.embeddings import model
+from embeddings import model
 
 def retrieve_properties(state: dict):
     query = f"{state.get('location', '')} {', '.join(state.get('activities', []))}".strip()
@@ -14,5 +14,14 @@ def retrieve_properties(state: dict):
         with_payload=True
     )
 
-    state["search_results"] = [point.payload for _, hits in results for point in hits]
-    return state
+    res = []
+    for _, hits in results:
+        for point in hits:
+            res.append(point.payload)
+
+    return {
+        **state,
+        "search_results": res,
+        "need_more_input": False
+    }
+
