@@ -65,8 +65,11 @@ def extract_info(state: dict):
     matched_locations = state.get("matched_locations", [])
     matched_activities = state.get("matched_activities", [])
 
-    if "location" not in state and matched_locations:
-        state["location"] = matched_locations[0][0]
+    # Always use the best-matched location
+    if matched_locations:
+        extracted_location = matched_locations[0][0]  # Top matched location
+        if not state.get("location") or extracted_location != state["location"]:
+            state["location"] = extracted_location  # Force update
 
     existing_activities = state.get("activities", [])
     for activity, _ in matched_activities:

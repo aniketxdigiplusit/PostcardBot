@@ -1,0 +1,180 @@
+{
+    "query": "I want to visit Vitenam.What would be the minimum budget to plan a 5 days trip"
+}
+
+{
+    "chat_id": "6cc4f8d6-f380-4bbe-b90e-f2afe3cf647d",
+    "response": "I see you’re planning a trip to Vietnam! While I don’t have specific properties listed for Vietnam, I have some lovely options from nearby regions that might interest you. Here’s a selection of experiences that could make for a wonderful getaway:\n\n- **Song Saa Private Island** in Koh Rong Archipelago, Cambodia  \n  Welcome to a delightful paradise! Imagine yourself on the secluded shores, where turquoise waves greet you as you explore beach views and indulge in serene spa treatments. The intimate setting of Song Saa Private Island is perfect for those looking to unwind and reconnect with nature through wellness experiences that embrace mindfulness and tranquility.\n\n- **Gangtey Lodge** in Wangdue Phodrang, Bhutan  \n  At Gangtey Lodge, immerse yourself in the rich tapestry of Bhutanese culture while enjoying hot stone baths and wellness experiences designed for rejuvenation. The lodge offers a relaxing atmosphere where you can connect deeply with the local traditions, making it a heartfelt retreat for those looking to experience Bhutan's spirit and charm.\n\n- **Zhiwaling Heritage** in Paro, Bhutan  \n  Step into the enchanting world of Zhiwaling Heritage, where relaxation meets cultural and spiritual exploration. With activities ranging from meditation to tea-making and local art demonstrations, you’ll weave yourself into Bhutan’s rich heritage while indulging in modern comforts. Its stunning traditional architecture and serene ambiance make it a refined escape.\n\n- **Kudrat - A Boutique Homestay** in Himachal Pradesh, India  \n  Nestled in a beautiful forest area, Kudrat offers a cozy and intimate stay. Enjoy fishing in the trout-rich waters of the Tirthan River or take a spiritual journey to nearby temples, embracing the serene mountain lifestyle. The picturesque surroundings and rich local culture provide a refreshing escape from the hustle and bustle.\n\n- **Aradura, Kohima** in Kerala, India  \n  Surrounded by breathtaking landscapes, Aradura invites you to experience mountain adventures and hiking journeys. With the enchanting beauty of Dzükou Valley and Shilloi Lake at your doorstep, this retreat is perfect for nature lovers seeking adventure and tranquility amidst scenic vistas.\n\nI'd love to know what kind of activities or experiences you're most looking forward to during your trip! Are you seeking relaxation, adventure, cultural immersion, or perhaps a mix of everything?",
+    "search_results": [
+        {
+            "activities": [
+                "beach views",
+                "spa treatments",
+                "wellness experience"
+            ],
+            "country": "Cambodia",
+            "experiences": [
+                "Picture yourself on the secluded shores of Song Saa Private Island in Cambodia, where the gentle sounds of the turquoise waves invite you into a world of tranquillity. As you step onto the powdery sands, the warm sunlight welcomes you to a haven crafted for mindful luxury travellers like you.  ",
+                "Song Saa offers tranquil spaces where your mind, body and soul return to their innate stillness. Here, the focus is on practical wellbeing activities, like a spa,  designed for balance and rejuvenation. You’ll be provided with accessible and effective activities that contribute to your overall sense of wellbeing. Take a deep breath and delve into the world of mindful living.\n"
+            ],
+            "id": 525,
+            "intro": "Welcome to a carefree paradise, an intimate escape, crafted with love, inspired by our surroundings. Song Saa Private Island offers luxury, serenity and a deep connection with the environment",
+            "name": "Song Saa Private Island",
+            "region": "Koh Rong Archipelago"
+        },
+        {
+            "activities": [
+                "bhutanese culture",
+                "hot stone bath",
+                "wellness experience"
+            ],
+            "country": "Bhutan",
+            "experiences": [
+                "Indulge in the time-honoured tradition of the Hot Stone Bath, a revered practice deeply rooted in Bhutanese culture and discover a sanctuary of relaxation and rejuvenation unlike any other. As you immerse yourself in this ancient therapeutic ritual, you'll go on a journey of holistic wellness that transcends the boundaries of time and space.",
+                "If you’re seeking a deeper understanding of Bhutanese life and culture, wearing the local Bhutanese dress is a wonderful way to connect with the heart and soul of this enigmatic land. Here, amidst the mist-shrouded mountains and prayer-flag-adorned valleys, you'll find people deeply connected to their roots, their legacy woven into every aspect of daily life. "
+            ],
+            "id": 596,
+            "intro": "Gangtey Lodge is the culmination of an adventure that began back in 2003 by owners Khin Omar Win and Brett Melzer. Founders of the iconic Balloons over Bagan and the remote Malikha Lodge in Northern Myanmar, they were invited to Bhutan to explore the possibility of ballooning together with their Bhutanese partner Yeshey Norbu.",
+            "name": "Gangtey Lodge",
+            "region": "Wangdue Phodrang"
+        },
+        {
+            "activities": [
+                "meditation",
+                "local art",
+                "wellness experience",
+                "bhutanese cuisine",
+                "spirituality",
+                "tea-making",
+                "ceramics",
+                "bhutanese culture",
+                "traditional architecture",
+                "hot stone bath"
+            ],
+            "country": "Bhutan",
+            "experiences": [
+                "Experience a relaxing and comfortable stay in the suites at Zhiwaling Heritage, where the focus is on providing a serene and cosy atmosphere for you to unwind and enjoy your time. These suites offer you positive and vibrant energy, providing beautiful views of the surrounding nature for a refreshing and uplifting experience.",
+                "The Zhiwaling Heritage experience transcends any ordinary travel experience. It unfurls as a cultural and spiritual exploration, seamlessly integrating you into the stories of Bhutan's profound heritage. Welcome to a place that connects you with Bhutan's cultural roots on a personal level.",
+                "Zhiwaling Heritage in Bhutan is a masterpiece of traditional architecture, built by local artisans using Bhutanese materials over five years. Combining cultural authenticity with modern comforts like underfloor heating, the property immerses you in Bhutan’s heritage. Designed to preserve tradition and promote Gross National Happiness, it offers an unparalleled stay that showcases the essence of Bhutan.",
+                "Zhiwaling Heritage’s Tea House offers a unique Bhutanese Suja butter tea-making experience. Here, you’ll learn to prepare this savoury drink using a wooden churner, blending butter and salt with tea for an authentic taste. Paired with local snacks, the ceremony provides a hands-on cultural immersion. The homey Tea House also features a library, adding to its charm and warmth.",
+                "The Samden Meditation House at Zhiwaling Heritage offers you a calm space for yoga and meditation with breathtaking views of Paro Taktsang. It features open-air and closed settings, equipped with yoga essentials. Accessible for all, including those unable to hike, it provides a serene environment for reflection, mindfulness and connection to Bhutan’s spiritual heritage.",
+                "Zhiwaling Heritage’s hot stone bath offers you a traditional Bhutanese experience in an open-air setting under the stars. Heated stones release minerals into a wooden tub, enhanced with Artemisia herbs for therapeutic benefits like easing joint pain and backaches. Surrounded by bamboo, the bath combines privacy with nature, providing you with a serene and authentic connection to Bhutanese wellness traditions.",
+                "Zhiwaling Heritage celebrates Bhutanese craftsmanship through its in-house ceramic art. Led by an artist with over 25 years of experience, the property offers handmade, customisable ceramics featuring traditional designs like Paro Taktsang. You can watch live ceramic painting sessions, purchase unique souvenirs or personalise pieces, creating meaningful memories of Bhutan’s rich artistic heritage."
+            ],
+            "id": 530,
+            "intro": "Indulging in the Zhiwaling experience goes beyond a simple stay; it unfolds as an enchanting cultural and spiritual journey, weaving you into the very fabric of Bhutan's rich heritage.",
+            "name": "Zhiwaling Heritage",
+            "region": "Paro"
+        },
+        {
+            "activities": [
+                "road trip",
+                "stargazing"
+            ],
+            "country": "Bolivia",
+            "experiences": [
+                "When you choose to journey through the cosmos with Explora Travesia Atacama-Uyuni, you're in for an exceptional experience. As a traveller drawn to the mysteries of the stars, you'll find the Andean skies offer unparalleled conditions for your exploration. With minimal light and air pollution, the stars and constellations reveal themselves with striking clarity, inviting you to gaze in wonder.",
+                "Go on an unforgettable overland journey from Explora Travesía Atacama to Ramaditas. As you traverse the Altiplano, you'll witness the raw beauty of the Andes. Setting out from the lodge, your adventure begins, crossing into Bolivia with ease. Are you all set for this incredible road journey?"
+            ],
+            "id": 703,
+            "intro": "The architecture of the Lodge at Uyuni’s Salt Flat and our Mountain Lodges has been planned to reduce the interference with the natural surrounding as much as possible and to highlight the landscapes that host each construction.",
+            "name": "Travesia Atacama-Uyuni",
+            "region": "Uyuni"
+        },
+        {
+            "activities": [
+                "fishing",
+                "temple visit"
+            ],
+            "country": "India",
+            "experiences": [
+                "A visit to the Durga Mata Mandir near Kudrat Homestay in Tirthan Valley gifts you spiritual solace. As you wander through the beautiful village landscapes and rich local culture, you’ll feel refreshed and calm. Visiting the temple will help you learn about the community’s faith and provide a glimpse of Himalayan traditions, leaving you inspired by the simplicity of life.",
+                "Fishing in the Tirthan River is a great escape into nature’s bliss. Famous for its trout-rich waters, this activity invites both novices and seasoned anglers to enjoy picturesque spots along the river. With a simple permit and the option to hire gear or a guide, you’ll be all set to enjoy the catch. "
+            ],
+            "id": 843,
+            "intro": "Kudrat is nestled in village Bandal adjoining a beautiful forest, full of Deodar (Cedar) trees and wildlife. The property is located at an altitude of 6200 feet and faces the snow capped Tirth peaks (14,000 feet) in Great Himalayan National Park (UNESCO Heritage Site) and provides distant views of the famous Tirthan river.",
+            "name": "Kudrat - A Boutique Homestay",
+            "region": "Himachal Pradesh"
+        },
+        {
+            "activities": [
+                "hiking",
+                "lake visit",
+                "mountain adventure"
+            ],
+            "country": "India",
+            "experiences": [
+                "Nestled amidst the rugged terrains of Nagaland, lies a breathtaking location of natural beauty waiting to be explored – Dzükou Valley. Imagine yourself stepping out from the comforts of Aradura, greeted by the crisp morning air, tingling with anticipation as you go on a hiking journey into the heart of this charming valley.",
+                "When you stay at Niraamaya Retreats Aradura, one of the must-visit destinations nearby is Shilloi Lake. Surrounded by majestic hills, this lake, shaped like a human foot, is a sight to behold. As you go on your journey from the retreat, you'll find yourself drawn to the enthralling beauty of this natural wonder.\n"
+            ],
+            "id": 608,
+            "intro": "Overlooking the verdant pine forests, Niraamaya Retreats Aradura offers a countryside escape amidst some of the most beautiful scenery in the region. The charming accommodations and spectacular vistas make your stay truly rewarding.",
+            "name": "Aradura, Kohima",
+            "region": "Kerala"
+        },
+        {
+            "activities": [
+                "local community",
+                "animal conservation"
+            ],
+            "country": "India",
+            "experiences": [
+                "As a fourth-generation conservationist, young Jaisal Singh Bhati carries the weight of a powerful and motivational legacy on his shoulders. It is a responsibility this teenage wildlife prodigy takes very seriously as he educates guests at Kanha Jungle Lodge and his followers on social media about the role we play in maintaining a symbiotic and respectful relationship with wildlife.",
+                "The smiling faces, endless warmth and folded hands that greet you at Kanha Jungle Lodge are a sincere welcome to the forest, by the people of the forest. Their connection with the Kanha forests and its wildlife which they revere, goes back hundreds of years, and you will see this in their everyday lives and philosophy. "
+            ],
+            "id": 612,
+            "intro": "The history of Kanha Jungle Lodge is closely intertwined with the contemporary tiger conservation movement in India dating back to the 1960s when Shri Kailash Sankhala raised an alarm about the shocking scale of tiger hunting that was driving this great cat to extinction.",
+            "name": "Kanha Jungle Lodge",
+            "region": "Madhya Pradesh"
+        },
+        {
+            "activities": [
+                "maasai warriors academy",
+                "local tribe",
+                "wildlife",
+                "african wilderness"
+            ],
+            "country": "Kenya",
+            "experiences": [
+                "When you stay at Saruni Wild, you step into a space where the heartbeat of Africa pulses through the air you breathe. Located within the wild and beautiful embrace of the Mara-Serengeti ecosystem, Saruni Wild invites you to witness the wonders of nature in its purest form.",
+                "Warriors Academy is offered at Saruni Samburu where you’ll learn about the fascinating Samburu way of life, and at Saruni Mara and Saruni Wild in the Masai Mara, where you’ll delve into the vibrant culture and customs of the Maasai. Get ready to be inspired as you learn the classic survival skills of the legendary Maasai warriors at Saruni Wild."
+            ],
+            "id": 705,
+            "intro": "Saruni Wild is a 5-tents camp located at the very heart of the Masai Mara ecosystem, in a community-owned conservancy called Lemek.",
+            "name": "Saruni Wild",
+            "region": "Lemek"
+        },
+        {
+            "activities": [
+                "village tour",
+                "local art"
+            ],
+            "country": "Nepal",
+            "experiences": [
+                "During your stay at The Nanee in the historic city of Bhaktapur, Nepal, take the opportunity to experience the rich cultural heritage and exceptional craftsmanship that the city is renowned for. One of the highlights of your visit will be a two-hour tour to witness the remarkable skills of a local woodcarver, a tradition deeply rooted in Bhaktapur’s history.",
+                "During your stay at The Nanee in Bhaktapur take a short 40-minute drive to Nagarkot, a hilltop village known for offering some of the most breathtaking views of the Himalayas. In Nagarkot, you’ll get an unparalleled opportunity to witness one of the most spectacular natural sights on the planet."
+            ],
+            "id": 737,
+            "intro": "The Nanee has been designed and created by the daughter in law of the family who understands architecture and the need for comfort for those who come to Bhaktapur to “seek”. It is in this comfort that we want you to experience, engage and explore the many facets of Bhaktapur and all it has to offer. ",
+            "name": "The Nanee",
+            "region": "Bhaktapur"
+        },
+        {
+            "activities": [
+                "glamping",
+                "nature retreat",
+                "elephant bathing",
+                "wildlife"
+            ],
+            "country": "India",
+            "experiences": [
+                "When you’re at Kipling Camp, the beloved elephant Tara will capture a special place in your heart. The joy of strolling with her down to the Banjar River and participating in her afternoon bathing ritual will be a cherished experience for you. Tara resides in her grand 'palace' at the camp and will be happy to see you.",
+                "A stay at Kipling Camp is truly worthwhile. The accommodation, featuring comfortable cottages with scenic views and essential amenities, enhances your overall sense of comfort and relaxation. Whether it's the captivating tales shared around the campfire in the evenings or the immersive experiences like massages, every aspect of a stay at Kipling Camp is carefully curated for you."
+            ],
+            "id": 549,
+            "intro": "Kipling Camp is the perfect destination for those who wish to relax in idyllic surroundings and explore the remote forests and villages of central India. Over the years, the Camp has moved gently with the times, without spoiling its magical atmosphere.",
+            "name": "Kipling Camp",
+            "region": "Madhya Pradesh"
+        }
+    ]
+}

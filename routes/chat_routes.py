@@ -47,4 +47,4 @@ def continue_chat(chat_id):
     session.state = response
     db.session.commit()
 
-    return jsonify({"chat_id": chat_id, "response": response["chatbot_response"]})
+    return jsonify({"chat_id": chat_id, "response": response["chatbot_response"], "search_results": response.get("search_results", [])})
