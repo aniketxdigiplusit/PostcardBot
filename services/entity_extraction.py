@@ -56,8 +56,8 @@ Example:
     state["matched_activities"] = matched_activities
 
     # Save top location for quick access
-    state["normalized_locations"] = matched_locations[0][0] if matched_locations else ""
-    state["normalized_activities"] = [act[0] for act in matched_activities]
+    # state["normalized_locations"] = matched_locations[0][0] if matched_locations else ""
+    # state["normalized_activities"] = [act[0] for act in matched_activities]
 
     return state
 
@@ -65,11 +65,17 @@ def extract_info(state: dict):
     matched_locations = state.get("matched_locations", [])
     matched_activities = state.get("matched_activities", [])
 
-    # Always use the best-matched location
     if matched_locations:
-        extracted_location = matched_locations[0][0]  # Top matched location
-        if not state.get("location") or extracted_location != state["location"]:
-            state["location"] = extracted_location  # Force update
+        # Extract country names in the order of similarity score
+        matched_countries = [loc[0] for loc in matched_locations]
+
+        # Check if state["location"] exists and has at least one overlapping location
+        existing_locations = state.get("location", [])
+
+        if not all(loc in existing_locations for loc in matched_countries):
+            state["location"] = matched_countries
+
+
 
     existing_activities = state.get("activities", [])
     for activity, _ in matched_activities:

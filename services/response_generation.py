@@ -6,13 +6,14 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
 
 load_dotenv()
 
 def fetch_postcards(album_id):
     params = {
         "filters[album][id][$eq]": album_id,  # Correct Strapi filter format
+        "filters[isComplete][$eq]": True,  # Correct Strapi filter format
         "fields[0]": "id",
         "fields[1]": "name",
         "fields[2]": "intro",
@@ -25,7 +26,7 @@ def fetch_postcards(album_id):
 
     try:
         data = response.json()
-        print(data)
+        # print(data)
         if response.status_code == 200 and "data" in data:
             return data["data"]
     except Exception as e:
@@ -34,137 +35,67 @@ def fetch_postcards(album_id):
     return []
 
 def get_more_info(state: dict):
-    prompt = PromptTemplate.from_template(
-        """The user said: \"{user_query}\"
-
-Acknowledge their message in a warm, friendly tone. Then kindly ask for more information about where they're planning to go or what experiences they enjoy (e.g. hiking, beach, spa). Keep it short and conversational."""
-    ).format(user_query=state["user_query"])
-
-    response = llm.invoke([system_prompt, HumanMessage(content=prompt)])
-
+    """
+    Generates a chatbot response asking the user for more information about their travel plans or experiences.
+    """
+    prompt_message = (
+        f"The user said: \"{state['user_query']}\"\n\n"
+        "Acknowledge their message in a warm, friendly tone. "
+        "Then kindly ask for more information about where they're planning to go or what experiences they enjoy "
+        "(e.g. hiking, beach, spa). Keep it short and conversational."
+    )
+    
+    response = send_to_llm(prompt_message)  # Call LLM function
+    # response = send_to_azure_openai(prompt_message)  # Call OpenAI LLM function
+    
     return {
         **state,
-        "chatbot_response": response.content,
+        "chatbot_response": response,
         "need_more_input": True
     }
 
 def generate_response(state: dict):
-    has_location = bool(state.get("location"))
-    has_activities = bool(state.get("activities"))
+    """
+    Generates a chatbot response providing travel recommendations based on user query and search results.
+    """
+    def get_follow_up_instruction():
+        has_location = bool(state.get("location"))
+        has_activities = bool(state.get("activities"))
 
-    if has_location and not has_activities:
-        follow_up_instruction = (
-            "At the end, gently ask what kind of activities or experiences the user is most looking forward to."
-        )
-    elif has_activities and not has_location:
-        follow_up_instruction = (
-            "At the end, gently ask where the user is thinking of traveling to."
-        )
-    else:
-        follow_up_instruction = "You don't need to ask any follow-up question."
+        if has_location and not has_activities:
+            return "At the end, gently ask what kind of activities or experiences the user is most looking forward to."
+        elif has_activities and not has_location:
+            return "At the end, gently ask where the user is thinking of traveling to."
+        return "You don't need to ask any follow-up question."
+
+    def enrich_results_with_postcards(search_results):
+        for result in search_results:
+            album_id = result.get("id")
+            if album_id:
+                result["postcards"] = fetch_postcards(album_id)
 
     search_results = state.get("search_results", [])
-    for result in search_results:
-        album_id = result["id"]
-        result["postcards"] = fetch_postcards(album_id)
-
-    prompt = PromptTemplate.from_template(
-        "The user said: {user_query}\n\n"
+    user_query = state.get("user_query", "")
+    
+    enrich_results_with_postcards(search_results)
+    
+    prompt_message = (
+        f"The user said: {user_query}\n\n"
         "Here are some matching properties in JSON format:\n"
-        "{properties_json}\n\n"
+        f"{json.dumps(search_results, indent=2)}\n\n"
         "You're a warm, friendly travel advisor helping someone find a perfect getaway.\n\n"
         "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country if available.\n"
         "Describe it in a natural, flowing paragraph — highlight its setting, vibe, and any special experiences or activities.\n"
+        "Then, include a **Postcards** section listing its postcards, each in a bullet point, with the postcard's name in **bold** and a short introduction.\n"
         "Do not number the properties or call them 'Property 1', 'Property 2', etc.\n"
         "Keep the tone friendly and helpful, like you're chatting with someone planning their dream trip.\n\n"
-        "{follow_up_instruction}"
-    ).format(
-        user_query=state["user_query"],
-        properties_json=json.dumps(state["search_results"], indent=2),
-        follow_up_instruction=follow_up_instruction
+        f"{get_follow_up_instruction()}"
     )
 
-    response = llm.invoke([system_prompt, HumanMessage(content=prompt)])
-
+    response = send_to_llm(prompt_message)
+    # response = send_to_azure_openai(prompt_message)
+    
     return {
         **state,
-        "chatbot_response": response.content
+        "chatbot_response": response
     }
-
-# import openai
-
-# openai_client = openai.AzureOpenAI(
-#     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-#     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-# )
-
-# def call_gpt(messages):
-#     # Ensure content is a string
-#     for msg in messages:
-#         if not isinstance(msg["content"], str):
-#             msg["content"] = str(msg["content"])  # Convert objects to string
-
-#     response = openai_client.chat.completions.create(
-#         model="gpt-4o-mini",
-#         messages=messages
-#     )
-#     return response.choices[0].message.content
-
-
-
-# def get_more_info(state: dict):
-#     prompt = PromptTemplate.from_template(
-#         """The user said: \"{user_query}\" 
-
-# Acknowledge their message in a warm, friendly tone. Then kindly ask for more information about where they're planning to go or what experiences they enjoy (e.g. hiking, beach, spa). Keep it short and conversational."""
-#     ).format(user_query=state["user_query"])
-
-#     response = call_gpt([
-#         {"role": "system", "content": system_prompt},
-#         {"role": "user", "content": prompt}
-#     ])
-
-#     return {
-#         **state,
-#         "chatbot_response": response,
-#         "need_more_input": True
-#     }
-
-# def generate_response(state: dict):
-#     has_location = bool(state.get("location"))
-#     has_activities = bool(state.get("activities"))
-
-#     follow_up_instruction = (
-#         "At the end, gently ask what kind of activities or experiences the user is most looking forward to."
-#         if has_location and not has_activities else
-#         "At the end, gently ask where the user is thinking of traveling to."
-#         if has_activities and not has_location else
-#         "You don't need to ask any follow-up question."
-#     )
-
-#     prompt = PromptTemplate.from_template(
-#         "The user said: {user_query}\n\n"
-#         "Here are some matching properties in JSON format:\n"
-#         "{properties_json}\n\n"
-#         "You're a warm, friendly travel advisor helping someone find a perfect getaway.\n\n"
-#         "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country if available.\n"
-#         "Describe it in a natural, flowing paragraph — highlight its setting, vibe, and any special experiences or activities.\n"
-#         "Do not number the properties or call them 'Property 1', 'Property 2', etc.\n"
-#         "Keep the tone friendly and helpful, like you're chatting with someone planning their dream trip.\n\n"
-#         "{follow_up_instruction}"
-#     ).format(
-#         user_query=state["user_query"],
-#         properties_json=json.dumps(state["search_results"], indent=2),
-#         follow_up_instruction=follow_up_instruction
-#     )
-
-#     response = call_gpt([
-#         {"role": "system", "content": system_prompt},
-#         {"role": "user", "content": prompt}
-#     ])
-
-#     return {
-#         **state,
-#         "chatbot_response": response
-#     }
