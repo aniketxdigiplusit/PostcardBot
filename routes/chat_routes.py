@@ -1,50 +1,52 @@
 import uuid
 from flask import Blueprint, request, jsonify
 from services.chat_service import create_chat_graph
-from models import db, ChatSession
+from services.chat_db import save_message
 
 chat_blueprint = Blueprint("chat", __name__)
-
+@chat_blueprint.route("/", methods=["POST"])
 @chat_blueprint.route("/", methods=["POST"])
 def start_chat():
     chat_id = str(uuid.uuid4())
     data = request.json
-    query = data.get("query", "")
+    original_query = data.get("query", "")
 
-    # Create and run chat graph
     graph = create_chat_graph()
-    state = {"user_query": query, "chat_id": chat_id}
+    state = {"user_query": original_query, "chat_id": chat_id}
     response = graph.invoke(state)
 
-    # Store session in database
-    session = ChatSession(id=chat_id, state=response)
-    db.session.add(session)
-    db.session.commit()
+    save_message(
+        thread_id=chat_id,
+        user_message=original_query,    # ✅ keep the real input
+        bot_response=response.get("chatbot_response", "")
+    )
 
     return jsonify({
         "chat_id": chat_id,
-        "response": response["chatbot_response"]
+        "response": response.get("chatbot_response", "")
     })
 
 @chat_blueprint.route("/<chat_id>", methods=["POST"])
 def continue_chat(chat_id):
-    session = ChatSession.query.get(chat_id)
-    if not session:
-        return jsonify({"error": "Invalid chat session"}), 404
-
-    state = session.state
-
-    # Get new user query
     data = request.json
-    query = data.get("query", "")
-    state["user_query"] = query
+    original_query = data.get("query", "")  # ✅ capture and fix it here
 
-    # Process and update state
+    # Prepare state
+    state = {"user_query": original_query, "chat_id": chat_id}
+
+    # Run the graph
     graph = create_chat_graph()
     response = graph.invoke(state)
 
-    # Update session in database
-    session.state = response
-    db.session.commit()
+    # ✅ save only the original query, not the enriched query
+    save_message(
+        thread_id=chat_id,
+        user_message=original_query,
+        bot_response=response.get("chatbot_response", "")
+    )
 
-    return jsonify({"chat_id": chat_id, "response": response["chatbot_response"], "search_results": response.get("search_results", [])})
+    return jsonify({
+        "chat_id": chat_id,
+        "response": response.get("chatbot_response", ""),
+        "search_results": response.get("search_results", [])
+    })

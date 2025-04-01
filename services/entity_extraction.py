@@ -33,6 +33,7 @@ Example:
 
     rendered_prompt = prompt.format(user_query=state["user_query"])
     response = sllm.invoke([system_prompt, HumanMessage(content=rendered_prompt)])
+    print(response.content)
 
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.content.strip(), flags=re.IGNORECASE).strip()
     if not clean_json.strip().startswith("{"):
