@@ -1,11 +1,13 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
-class ChatSession(db.Model):
-    id = db.Column(db.String, primary_key=True)
-    state = db.Column(db.JSON, nullable=False)
+class ChatHistory(db.Model):
+    __tablename__ = "chat_history"
 
-    def __init__(self, id, state):
-        self.id = id
-        self.state = state
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    thread_id = db.Column(db.String, nullable=False)
+    user_message = db.Column(db.Text, nullable=False)
+    bot_response = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)

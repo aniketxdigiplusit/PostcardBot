@@ -1,5 +1,5 @@
-from qdrant_client import QdrantClient
-from embeddings import model
+from services.hotel import generate_embedding
+from config.settings import qdrant
 import numpy as np
 
 def retrieve_properties(state: dict):
@@ -21,9 +21,9 @@ def retrieve_properties(state: dict):
 
     # query = f"Location:{' '.join(state.get('location', []))} Activities:{', '.join(state.get('activities', []))}".strip()
 
-    query_vector = model.encode(user_query).tolist() if user_query else np.zeros(384).tolist()
-    location_vector = model.encode(location_text).tolist() if location_text else np.zeros(384).tolist()
-    activities_vector = model.encode(activities_text).tolist() if activities_text else np.zeros(384).tolist()
+    query_vector = generate_embedding(user_query) if user_query else np.zeros(768).tolist()
+    location_vector = generate_embedding(location_text) if location_text else np.zeros(768).tolist()
+    activities_vector = generate_embedding(activities) if activities else np.zeros(768).tolist()
     combined_vector = (
         np.array(query_vector) * 0.3 + 
         np.array(location_vector) * 0.5 + 
@@ -31,8 +31,6 @@ def retrieve_properties(state: dict):
     ).tolist()
     # Compute query embedding
     # query_vector = model.encode(query).tolist() if query else np.zeros(384).tolist()
-
-    client = QdrantClient("localhost", port=6333)
 
     # Create filter for matching locations in "country" or "region" fields
     location_filter = {
@@ -47,7 +45,7 @@ def retrieve_properties(state: dict):
         ]
     } if state.get("location") else {}
 
-    results = client.query_points(
+    results = qdrant.query_points(
         collection_name="postcard",
         # query=query_vector,
         query=combined_vector,
