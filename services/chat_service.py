@@ -48,11 +48,11 @@ def create_chat_graph():
     )
 
     # ---------------- All terminal nodes lead to generate_response ----------------
-    graph.add_edge("get_more_info", "generate_response")
     graph.add_edge("hotel_followup", "generate_response")
     graph.add_edge("retrieve_properties", "generate_response")
 
     # ---------------- End ----------------
+    graph.add_edge("get_more_info", END)
     graph.add_edge("generate_response", END)
 
     return graph.compile()

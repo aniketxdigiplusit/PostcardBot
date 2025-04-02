@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm
 from services.chat_db import save_message
 import logging
 

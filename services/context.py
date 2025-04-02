@@ -15,10 +15,10 @@ def get_context(state: dict):
         logger.warning("Missing thread_id in state")
         return state
 
-    messages = get_chat_messages(thread_id, limit=15)
-    last_15 = messages[-15:] if len(messages) > 15 else messages
+    messages = get_chat_messages(thread_id, limit=6)
+    last_6 = messages[-6:] if len(messages) > 6 else messages
 
-    formatted_history = "\n".join(f"{msg['sender'].capitalize()}: {msg['text']}" for msg in last_15)
+    formatted_history = "\n".join(f"{msg['sender'].capitalize()}: {msg['text']}" for msg in last_6)
 
     llm_prompt = f"""
 You are an AI assistant for a travel chatbot. Your task is to refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history.
