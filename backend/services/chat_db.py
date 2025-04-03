@@ -22,7 +22,7 @@ def get_chat_messages(thread_id: str, limit: int = 10) -> list:
     """Retrieve last N chat messages"""
     try:
         messages = ChatHistory.query.filter_by(thread_id=thread_id) \
-                                    .order_by(ChatHistory.timestamp.asc()) \
+                                    .order_by(ChatHistory.timestamp.desc()) \
                                     .limit(limit).all()
 
         history = []

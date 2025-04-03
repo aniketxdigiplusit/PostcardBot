@@ -16,7 +16,11 @@ def get_context(state: dict):
         return state
 
     messages = get_chat_messages(thread_id, limit=6)
-    last_6 = messages[-6:] if len(messages) > 6 else messages
+    last_6 = messages[:6] if len(messages) > 6 else messages
+    print(f"Last 6 messages: {last_6}")  # Debugging line
+    if not last_6:
+        logger.warning("No chat history found for the given thread_id")
+        return state
 
     formatted_history = "\n".join(f"{msg['sender'].capitalize()}: {msg['text']}" for msg in last_6)
 
@@ -54,6 +58,7 @@ If you don't need to modify the query, repeat it exactly as it is.
 """
 
     response = llm.invoke([system_prompt, HumanMessage(content=llm_prompt)])
+    print(f"LLM Response: {response.content.strip()}")  # Debugging line
 
     enriched_query = response.content.strip() or user_input
 
