@@ -1,97 +1,121 @@
-from services.hotel import generate_embedding
+from services.hotel import generate_embedding, cosine_similarity
 from config.settings import qdrant
 import numpy as np
-import time
+import random
+
+# ------- Stage Filter Definitions -------
+PRIORITY_CHAIN = {
+    "properties": ["property", "activity", "postcard", "location"],
+    "activities": ["activity", "postcard", "location", "property"],
+    "location": ["location", "activitiy", "postcard" , "property"],
+    "postcards": ["postcard", "activity", "property", "location"],
+}
+
+SEARCH_FIELDS = {
+    "property": ["name", "intro"],
+    "activity": ["activities"],
+    "location": ["country", "region", "intro"],
+    "postcard": ["name", "intro", "story"],
+}
+
+# ------- Top-K Selector -------
+def top_k(candidates, scores, k):
+    paired = list(zip(candidates, scores))
+    paired.sort(key=lambda x: x[1], reverse=True)
+    return [c for c, _ in paired[:k]]
 
 def retrieve_properties(state: dict):
-    start_time = time.time()
-    locations = state.get("location", [])  # Now an array
+    locations = state.get("location", [])
     activities = state.get("activities", [])
     user_query = state.get("user_query", "").strip()
-    priority = state.get("priority_field", "")  
-    print("Priority Field:", priority)  # Debugging output
+    priority = state.get("priority_field", "properties")
 
-    # # Combine multiple locations into a single string
+    print("🔵 Priority selected by user:", priority)
+    print("📍 Extracted Locations:", locations)
+    print("🎯 Extracted Activities:", activities)
+    print("💬 User Query:", user_query)
+
     query_vector = generate_embedding(user_query) if user_query else np.zeros(768).tolist()
-    location_vector = generate_embedding(" ".join(locations)) if locations else np.zeros(768).tolist()
-    activities_vector = generate_embedding(" ".join(activities)) if activities else np.zeros(768).tolist()
 
-    combined_vector = (
-        np.array(query_vector) * 0.3 + 
-        np.array(location_vector) * 0.5 + 
-        np.array(activities_vector) * 0.2
-    ).tolist()
- 
-    location_filter = {
-        "must": [
-            {
-                "should": [
-                    {"key": "country", "match": {"value": loc}} for loc in locations
-                ] + [
-                    {"key": "region", "match": {"value": loc}} for loc in locations
-                ] + [
-                    {"key": "activities", "match": {"value": act}} for act in activities
-                ]
-            }
-        ]
-    } if locations or activities else {}
+    # ----------- Qdrant Search -----------
     results = qdrant.query_points(
         collection_name="postcard",
-        # query=query_vector,
-        query=combined_vector,
-        limit=50,
-        with_payload=True,
-        query_filter=location_filter  # Apply filter
+        query=query_vector,
+        limit=200,
+        with_payload=True
     )
-    
-    # ---- Priority Weights ----
-    WEIGHTS = {
-        "location": 5.0 if priority == "location" else 1.0,
-        "activities": 5.0 if priority == "activities" else 1.0,
-        "postcards": 5.0 if priority == "postcards" else 1.0,
-        "query": 1.0
-    }
 
-    ranked_results = []
-
-    # ---- Ranking ----
-    print("Query:", locations, activities)  # Debugging output
+    # ----------- Initial Candidate Extraction -----------
+    candidates = []
     for _, hits in results:
         for point in hits:
-            payload = point.payload.copy()
-            name_vector = generate_embedding(payload.get("name", ""))
-            intro_vector = generate_embedding(payload.get("intro", ""))
-            postcard_vector = generate_embedding(" ".join([p.get("intro", "") for p in payload.get("postcards", [])]))
+            candidates.append(point.payload)
 
-            # Weighted similarity
-            sim = (
-                cosine_similarity(query_vector, name_vector) * WEIGHTS["query"] +
-                cosine_similarity(location_vector, name_vector) * WEIGHTS["location"] +
-                cosine_similarity(activities_vector, name_vector) * WEIGHTS["activities"] +
-                cosine_similarity(query_vector, postcard_vector) * WEIGHTS["postcards"]
-            )
-            print(f"Similarity for {payload.get('name', '')}: {sim}")
+    print(f"✅ Initial candidates fetched: {len(candidates)}")
+    last_valid_candidates = candidates.copy()
 
-            ranked_results.append({
-                "payload": payload,
-                "score": sim
-            })
+    # ----------- Multi-stage Filtering -----------
+    threshold = 2 
 
-    # ---- Sort by Score ----
-    ranked_results.sort(key=lambda x: x["score"], reverse=True)
-    ranked_payloads = [r["payload"] for r in ranked_results[:5]]
-    end_time = time.time()  
-    print(f"retrieve_properties execution time: {end_time - start_time:.2f} seconds")
+    for stage in PRIORITY_CHAIN[priority]:
+        print(f"\n➡️ Applying filter for: {stage.upper()}")
 
+        # Always apply on last valid candidates
+        candidates = last_valid_candidates.copy()
+
+        before_count = len(candidates)
+
+        sims = []
+
+        if stage == "property" and user_query:
+            sims = [
+                max([cosine_similarity(query_vector, generate_embedding(c.get(field, ""))) for field in SEARCH_FIELDS["property"]])
+                for c in candidates
+            ]
+            candidates = top_k(candidates, sims, 3)
+
+        elif stage == "activity" and activities:
+            candidates = [
+            c for c in candidates
+            if any(act.lower() in [a.lower() for a in c.get("activities", [])] for act in activities)
+        ]
+
+        elif stage == "postcard" and user_query:
+            sims = [
+                max([cosine_similarity(query_vector, generate_embedding(p.get(field, ""))) for p in c.get("postcards", []) for field in SEARCH_FIELDS["postcard"]], default=0)
+                for c in candidates
+            ]
+            candidates = top_k(candidates, sims, 20)
+
+       
+        elif stage == "location":
+            if not locations:
+                print("⚠️ No locations given, skipping to 0 results.")
+                candidates = []  # Force zero results
+            else:
+                candidates = [c for c in candidates if any(
+                    loc.lower() in [(c.get("country") or "").lower(), (c.get("region") or "").lower(), (c.get("intro") or "").lower()]
+                    for loc in locations
+                )]
+
+        print(f"🔸 Candidates reduced: {before_count} ➤ {len(candidates)}")
+
+        if len(candidates) < threshold:
+            print("⚠️ Not enough candidates in this stage. Trying next priority...")
+            continue  # go to next stage without breaking
+        else:
+            last_valid_candidates = candidates.copy()
+
+         # ----------- Fallback Case -----------
+
+        if len(last_valid_candidates) < threshold:
+            print("⚡ Fallback triggered: Selecting random 5 from initial search space")
+            last_valid_candidates = random.sample(candidates if candidates else candidates + last_valid_candidates, min(5, len(candidates or last_valid_candidates)))
+
+    print(f"\n🏁 Final candidates after filtering: {len(candidates)}\n")
 
     return {
         **state,
-        "search_results": ranked_payloads,
+        "search_results": candidates,
         "need_more_input": False
     }
-
-def cosine_similarity(vec1, vec2):
-    if not vec1 or not vec2:
-        return 0.0
-    vec1, vec2 = np.array(vec1), np.array(vec2)
-    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))

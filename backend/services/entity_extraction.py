@@ -5,6 +5,20 @@ from langchain.prompts import PromptTemplate
 from config.settings import sllm
 from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
 from utils.helpers import system_prompt
+from services.hotel import generate_embedding
+
+def chunk_text(text, chunk_size=3, overlap=2):
+    words = text.split()
+    chunks = []
+    start = 0
+    while start < len(words):
+        end = start + chunk_size
+        chunk = words[start:end]
+        if not chunk:
+            break
+        chunks.append(' '.join(chunk))
+        start = end - overlap
+    return chunks
 
 def normalize_entities(state: dict):
     prompt = PromptTemplate.from_template(
@@ -46,9 +60,16 @@ Example:
 
     user_locations = extracted.get("possible_locations", [])
     user_activities = extracted.get("possible_activities", [])
+    print(state["user_query"])
 
     matched_locations = semantic_match(" ".join(user_locations), location_labels, location_vectors)
-    matched_activities = semantic_match(" ".join(user_activities), activity_labels, activity_vectors)
+    chunks = chunk_text(state['user_query'])
+
+    matched_activities = []
+
+    for chunk in chunks:
+        matched = semantic_match(chunk, activity_labels, activity_vectors)
+        matched_activities.extend(matched)
 
     print(user_locations, user_activities)
     print(matched_locations, matched_activities)
