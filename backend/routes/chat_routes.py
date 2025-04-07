@@ -8,6 +8,16 @@ chat_blueprint = Blueprint("chat", __name__)
 @chat_blueprint.route("/", methods=["POST"])
 def start_chat():
     chat_id = str(uuid.uuid4())
+    greeting_message = (
+        "👋 Welcome to **Postcard Travel** – a conscious luxury travel platform!\n\n"
+        "✨ We offer:\n"
+        "• Over 150+ boutique **properties** 🏨\n"
+        "• 300+ unique **postcards** from around the world 📸\n"
+        "• Rich **experiences** across 25+ countries 🌍\n\n"
+        "🎒 Whether you're looking for glamping in Rajasthan or cultural retreats in Japan – we're here to help you explore mindfully.\n"
+        "Start by telling me where you want to go or what you'd like to experience!"
+    )
+
     data = request.json
     original_query = data.get("query", "")
     priority_field = data.get("priority_field", "")  # ✅ get priority from frontend

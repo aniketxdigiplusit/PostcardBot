@@ -34,13 +34,23 @@ Your job is to extract only travel-related information that the user explicitly 
 - ❌ DO NOT extract words like "city," "town," "place," or "destination" as locations.
 - ❌ DO NOT assume a location based on context.
 - If no explicit location is mentioned, return an empty array.
+- Extract months or seasons ONLY if they are explicitly mentioned, e.g. "July", "Winter", "Summer".
+- Convert seasons to the corresponding months using this mapping:
+
+**Season → Months**
+- Summer → ["April", "May", "June"]
+- Monsoon → ["July", "August", "September"]
+- Autumn → ["October", "November"]
+- Winter → ["December", "January", "February"]
+- Spring → ["March", "April"]
 
 Output a valid JSON object only:
 
 Example:
 {{
   "possible_locations": [],
-  "possible_activities": []
+  "possible_activities": [],
+  "possible_months": []
 }}
 """
 )
@@ -56,11 +66,14 @@ Example:
     try:
         extracted = json.loads(clean_json)
     except json.JSONDecodeError:
-        extracted = {"possible_locations": [], "possible_activities": []}
+       extracted = {"possible_locations": [], "possible_activities": [], "possible_months": []}
 
     user_locations = extracted.get("possible_locations", [])
     user_activities = extracted.get("possible_activities", [])
+    user_months = extracted.get("possible_months", [])
+
     print(state["user_query"])
+    
 
     matched_locations = semantic_match(" ".join(user_locations), location_labels, location_vectors)
     chunks = chunk_text(state['user_query'])
@@ -71,7 +84,9 @@ Example:
         matched = semantic_match(chunk, activity_labels, activity_vectors)
         matched_activities.extend(matched)
 
-    print(user_locations, user_activities)
+    print(user_locations, user_activities, user_months)
+    state["months"] = user_months
+
     print(matched_locations, matched_activities)
 
     state["matched_locations"] = matched_locations
@@ -86,10 +101,13 @@ Example:
 def extract_info(state: dict):
     matched_locations = state.get("matched_locations", [])
     matched_activities = state.get("matched_activities", [])
+    possible_months = state.get("possible_months", [])
 
     if matched_locations:
-        # Extract country names in the order of similarity score
-        matched_countries = [loc[0] for loc in matched_locations]
+        # Take only the top matched location (highest score)
+        top_location = matched_locations[0][0]
+        matched_countries = [top_location]
+
 
         # Check if state["location"] exists and has at least one overlapping location
         existing_locations = state.get("location", [])
@@ -106,6 +124,13 @@ def extract_info(state: dict):
 
     if existing_activities:
         state["activities"] = existing_activities
+    
+    existing_months = state.get("months", [])
+    for month in possible_months:
+        if month not in existing_months:
+            existing_months.append(month)
+    if existing_months:
+        state["months"] = existing_months
 
-    state["has_enough_info"] = bool(state.get("location") or state.get("activities"))
+    state["has_enough_info"] = bool(state.get("location") or state.get("activities") or state.get("months"))
     return state

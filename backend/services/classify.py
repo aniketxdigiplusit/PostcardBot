@@ -12,6 +12,7 @@ def classify_input(state: dict):
     Classifies the refined user query into:
     - greeting
     - hotel_followup
+
     - normal query
     """
     print("🚨 classify_input() is being called 🚨")
@@ -32,6 +33,7 @@ Your task is to classify the following user query into exactly one of these cate
 ### Example Classification:
 - "Hi" → greeting
 - "Tell me more about Taj Lake Palace" → hotel_followup
+-"I want to travel in July" → normal
 - "I want to plan a trip to Rajasthan for trekking" → normal
 
 ### Query:

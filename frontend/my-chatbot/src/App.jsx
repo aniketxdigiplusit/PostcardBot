@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function App() {
@@ -7,7 +7,28 @@ export default function App() {
     const [loading, setLoading] = useState(false);
     const [priority, setPriority] = useState('');
 
-    const threadId = "100"; // ✅ hardcoded thread ID
+    const threadId = "104"; // ✅ hardcoded thread ID
+     // 🟡 Greet user on first load
+     useEffect(() => {
+        const greeting = `
+🌟 Welcome to **Postcard Travel Club** – your gateway to conscious luxury travel! 🌟
+
+At Postcard Travel, we believe that travel should be both indulgent and responsible. Our mission is to connect discerning travelers with boutique properties and immersive experiences that celebrate local cultures, histories, and environments, all while promoting responsible tourism. 
+
+✨ **What We Offer:**
+- **Curated Stays:** Discover over 200 boutique luxury properties across 30+ countries, each offering unique and authentic experiences.
+- **Immersive Experiences:** Engage in activities that allow you to connect deeply with the communities and landscapes you visit, ensuring your travels are meaningful and impactful.
+- **Community Connections:** Join a global network of conscious luxury travelers, travel designers, storytellers, and boutique properties dedicated to advancing responsible tourism. 
+
+Whether you're seeking a serene retreat in the Mayan jungle, an adventurous horseback ride in Chile, or an opportunity to meet the Maasai warriors in Kenya, Postcard Travel is here to curate your perfect journey. 
+
+Begin your exploration by sharing your travel aspirations with us. Let's craft experiences that not only fulfill your wanderlust but also contribute positively to the places and people you encounter.
+
+🌍 **Start your conscious luxury journey with Postcard Travel today!**
+        `;
+        setMessages([{ sender: "bot", text: greeting }]);
+    }, []);
+
 
     const handleSend = async () => {
         if (!input.trim()) return;

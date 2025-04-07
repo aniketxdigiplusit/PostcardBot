@@ -25,7 +25,7 @@ def get_context(state: dict):
     formatted_history = "\n".join(f"{msg['sender'].capitalize()}: {msg['text']}" for msg in last_6)
 
     llm_prompt = f"""
-You are an AI assistant for a travel chatbot. Your task is to refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history.
+You are an AI assistant for a travel chatbot. Your task is to only refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history. Do not try to reply to the query.
 
 **Chat History:** 
 {formatted_history}

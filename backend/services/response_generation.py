@@ -108,16 +108,21 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
 
 def handle_property_search(user_query, search_results, state):
     enrich_results_with_postcards(search_results)
+    priority = state.get("priority_field", "")
+
     
     prompt_message = (
         f"The user said: {user_query}\n\n"
+        f"Priority selected by the user: **{priority}**\n"
+        "The user is looking for properties that match their travel interests.\n\n"
+        "You have a list of properties that closest match the user's query.\n\n"
         "Here are some matching properties in JSON format:\n"
         f"{json.dumps(search_results, indent=2)}\n\n"
-        "You're a warm, friendly travel advisor helping someone find a perfect getaway.\n\n"
         "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country.\n"
+        "If the property does not match one or more of the user's interests, mention why you are providing it and how is it relevant.\n"
         "Describe it naturally, highlighting its setting, vibe, and special experiences.\n"
         "Include a **Postcards** section listing its postcards with a brief introduction.\n"
-        "Do not number the properties. Keep the tone friendly and engaging.\n\n"
+
         f"{get_follow_up_instruction(state)}"
     )
     
