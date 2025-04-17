@@ -1,6 +1,7 @@
 from langchain.schema import SystemMessage, HumanMessage
 from config.settings import llm
 import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
@@ -11,6 +12,8 @@ openai_client = openai.AzureOpenAI(
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
 )
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # system_prompt = SystemMessage(
 #     content=(
@@ -85,6 +88,7 @@ def send_to_azure_openai(prompt_message):
             model="gpt-4o-mini",
             messages=messages
         )
+        print(response)
         
         if response and response.choices and len(response.choices) > 0:
             return response.choices[0].message.content
@@ -92,6 +96,29 @@ def send_to_azure_openai(prompt_message):
             print("Error: No valid response from Azure OpenAI")
             return None
     
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return None
+    
+def send_to_openai(prompt_message):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt_message}
+    ]
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",  # or gpt-4 / gpt-3.5-turbo
+            messages=messages
+        )
+        print(response)
+
+        if response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content
+        else:
+            print("Error: No valid response from OpenAI")
+            return None
+
     except Exception as e:
         print(f"Exception occurred: {e}")
         return None

@@ -1,7 +1,7 @@
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai,send_to_openai
 from services.hotel import extract_hotel_name_from_query
 import logging
 

@@ -5,7 +5,7 @@ from langchain.schema import SystemMessage, HumanMessage
 from langchain.prompts import PromptTemplate
 from config.settings import sllm
 from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai,send_to_openai
 from services.hotel import generate_embedding
 from config.db import  get_preferences, save_preferences
 
@@ -78,7 +78,7 @@ DO NOT GIVE ANY EXPLANATION
         last_2=json.dumps(last_2, indent=2)
     )
 
-    response = send_to_azure_openai(rendered_prompt)
+    response = send_to_openai(rendered_prompt)
     print(response)
 
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.strip(), flags=re.IGNORECASE).strip()

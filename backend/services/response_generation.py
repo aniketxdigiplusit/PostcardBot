@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai,send_to_openai
 from services.chat_db import save_message
 import logging
 
@@ -116,7 +116,7 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
         hotel_intro=state.get("hotel_intro", "")
     )
     
-    response = send_to_azure_openai(prompt_message)
+    response = send_to_openai(prompt_message)
     return {**state, "chatbot_response": response}
 
 def handle_property_search(user_query, search_results, state):
@@ -140,7 +140,7 @@ def handle_property_search(user_query, search_results, state):
         f"{get_follow_up_instruction(state)}"
     )
     
-    response = send_to_azure_openai(prompt_message)
+    response = send_to_openai(prompt_message)
     return {**state, "chatbot_response": response}
 
 def enrich_results_with_postcards(search_results):

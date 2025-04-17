@@ -48,7 +48,7 @@ def create_chat_graph():
     graph.add_conditional_edges(
         "extract_info",
         lambda s: "get_more_info"
-        if not s.get("location") or not s.get("activities")  
+        if not s.get("location") and not s.get("activities")  
         else "detect_conflicting_priorities"
         if (s.get("months") or s.get("prices")) and not get_preferences(s.get("thread_id", "")).get("resolved_priority")  # 🧠 Ask user what to prioritize
         else "retrieve_properties"  # ✅ We're good

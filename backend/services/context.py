@@ -2,7 +2,7 @@ from services.chat_db import get_chat_messages
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai,send_to_openai
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ Return only the refined query text, without comments, explanations, or formattin
 If you don't need to modify the query, repeat it exactly as it is.
 
 """
-    response= send_to_azure_openai(llm_prompt)
+    response= send_to_openai(llm_prompt)
 
     # response = send_to_azure_openai([system_prompt, HumanMessage(content=llm_prompt)])
     print(f"LLM Response: {response.strip()}")  # Debugging line
