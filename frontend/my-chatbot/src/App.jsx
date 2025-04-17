@@ -6,7 +6,7 @@ export default function App() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [priority, setPriority] = useState('');
-    const threadId = "117";
+    const threadId = "118";
 
     useEffect(() => {
         const greeting = `

@@ -17,12 +17,13 @@ def get_context(state: dict):
 
     messages = get_chat_messages(thread_id, limit=6)
     last_6 = messages[:6] if len(messages) > 6 else messages
-    print(f"Last 6 messages: {last_6}")  # Debugging line
+     # Debugging line
     if not last_6:
         logger.warning("No chat history found for the given thread_id")
         return state
 
     formatted_history = "\n".join(f"{msg['sender'].capitalize()}: {msg['text']}" for msg in last_6)
+    print(f"Formatted History: {formatted_history}")  
 
     llm_prompt = f"""
 You are an AI assistant for a travel chatbot. Your task is to only refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history. Do not try to reply to the query.
@@ -33,14 +34,12 @@ You are an AI assistant for a travel chatbot. Your task is to only refine user q
 **New User Query:** 
 {user_input}
 
-
-**Guidelines:**
--  Keep greetings or small talk unchanged.
-- Refrain from adding locations, activities, budgets, or preferences unless explicitly stated.
-- Avoid assuming, inferring, or enriching based on general knowledge.
-- DO NOT enrich the query using general knowledge or common sense.
-- When the query references previous chat (e.g., "the first one", "those hotels"), rewrite it to be clear and standalone.
-- If the query is already clear (e.g., "I want to go to Rajasthan"), repeat it ex
+Instructions:
+- Keep greetings or small talk unchanged.
+- Do not insert or assume locations, activities, budgets, or preferences unless mentioned clearly.
+- If the query is already clear (e.g., "I want to go to Rajasthan"), repeat it exactly.
+-If the query is asking for a specific hotel, replace it with the exact name from chat history.
+    Example: "Tell me more about the first hotel you suggested" → "Tell me more about Windermere Riverhouse"
    Example: "Tell me more about the first hotel you suggested" → "Tell me more about Windermere Riverhouse"
 -If the query is asking answering to a preference from previous context, rewrite the previous query with the preference.
     Example: " I prefer budget more"- " I want to go nepal in 200 budget and my preference is budget"
