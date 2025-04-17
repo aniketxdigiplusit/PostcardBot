@@ -53,6 +53,7 @@ def continue_chat(chat_id):
     state = {
         "user_query": original_query,
         "chat_id": chat_id,
+        "thread_id": chat_id,
         "priority_field": priority_field  # ✅ pass it to the state
     }
 

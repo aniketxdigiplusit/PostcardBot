@@ -2,12 +2,15 @@ from langchain.schema import SystemMessage, HumanMessage
 from config.settings import llm
 import openai
 import os
+from dotenv import load_dotenv
 
-# openai_client = openai.AzureOpenAI(
-#     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-#     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-# )
+load_dotenv()
+
+openai_client = openai.AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
 
 # system_prompt = SystemMessage(
 #     content=(
@@ -69,26 +72,26 @@ def send_to_llm(prompt_message):
     return response.content
 
 
-# def send_to_azure_openai(prompt_message):
-#     # print(prompt_message)
+def send_to_azure_openai(prompt_message):
+    # print(prompt_message)
     
-#     messages = [
-#         {"role": "system", "content": system_prompt.content},
-#         {"role": "user", "content": prompt_message}
-#     ]
+    messages = [
+        {"role": "system", "content": system_prompt.content},
+        {"role": "user", "content": prompt_message}
+    ]
     
-#     try:
-#         response = openai_client.chat.completions.create(
-#             model="gpt-4o-mini",
-#             messages=messages
-#         )
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
         
-#         if response and response.choices and len(response.choices) > 0:
-#             return response.choices[0].message.content
-#         else:
-#             print("Error: No valid response from Azure OpenAI")
-#             return None
+        if response and response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content
+        else:
+            print("Error: No valid response from Azure OpenAI")
+            return None
     
-#     except Exception as e:
-#         print(f"Exception occurred: {e}")
-#         return None
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return None

@@ -5,6 +5,7 @@ from models import db
 from models import ChatHistory  
 from routes.chat_routes import chat_blueprint
 from flask_cors import CORS
+from qdrant_client import QdrantClient
 
 
 

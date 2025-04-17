@@ -1,10 +1,11 @@
 from langgraph.graph import StateGraph, END
-from services.entity_extraction import normalize_entities, extract_info
+from services.entity_extraction import normalize_entities, extract_info, detect_conflicting_priorities
 from services.property_search import retrieve_properties
 from services.response_generation import generate_response, get_more_info
 from services.context import get_context
 from services.classify import classify_input
 from services.hotel import hotel_followup
+from config.db import get_preferences
 
 def process_query(state: dict):
     message = state["user_query"].lower()
@@ -23,6 +24,7 @@ def create_chat_graph():
     graph.add_node("get_more_info", get_more_info)
     graph.add_node("retrieve_properties", retrieve_properties)
     graph.add_node("hotel_followup", hotel_followup)
+    graph.add_node("detect_conflicting_priorities", detect_conflicting_priorities)
     graph.add_node("generate_response", generate_response)
 
     # ---------------- Entry ----------------
@@ -34,24 +36,35 @@ def create_chat_graph():
     graph.add_edge("normalize_entities", "classify_input")
 
     # ---------------- Classify step ----------------
+  # CLASSIFY input: normal path
     graph.add_conditional_edges(
         "classify_input",
         lambda s: "get_more_info" if s.get("query_type") == "greeting" else
-                  "hotel_followup" if s.get("query_type") == "hotel_followup" else
-                  "extract_info"
+                "hotel_followup" if s.get("query_type") == "hotel_followup" else
+                "extract_info"
     )
 
-    # ---------------- Extract Info Decision ----------------
+    # EXTRACT INFO: do we need to ask for more or resolve conflicting preferences?
     graph.add_conditional_edges(
         "extract_info",
-        lambda s: "retrieve_properties" if s.get("has_enough_info") else "get_more_info"
+        lambda s: "get_more_info"
+        if not s.get("location") or not s.get("activities")  
+        else "detect_conflicting_priorities"
+        if (s.get("months") or s.get("prices")) and not get_preferences(s.get("thread_id", "")).get("resolved_priority")  # 🧠 Ask user what to prioritize
+        else "retrieve_properties"  # ✅ We're good
     )
 
+    # After conflicting priority is resolved → either go back to extract or retrieve
+    graph.add_conditional_edges(
+    "detect_conflicting_priorities",
+    lambda s: "generate_response" if s.get("need_more_input") else "retrieve_properties"
+)
     # ---------------- All terminal nodes lead to generate_response ----------------
     graph.add_edge("hotel_followup", "generate_response")
     graph.add_edge("retrieve_properties", "generate_response")
 
     # ---------------- End ----------------
+    
     graph.add_edge("get_more_info", END)
     graph.add_edge("generate_response", END)
 

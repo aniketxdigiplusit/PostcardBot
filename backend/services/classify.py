@@ -1,7 +1,7 @@
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
 from services.hotel import extract_hotel_name_from_query
 import logging
 
@@ -43,9 +43,11 @@ Output only the classification value: greeting, hotel_followup, or normal.
 Do not explain.
 Do not output anything else.
 """
+    response= send_to_llm(classification_prompt)  # Call LLM function
+    classification = response.lower().strip()
 
-    response = llm.invoke([system_prompt, HumanMessage(content=classification_prompt)])
-    classification = response.content.strip().lower()
+    # response = llm.invoke([system_prompt, HumanMessage(content=classification_prompt)])
+    # classification = response.content.strip().lower()
 
     # Enforce only allowed values
     if classification not in ["greeting", "hotel_followup", "normal"]:

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
 from services.chat_db import save_message
 import logging
 
@@ -53,6 +53,7 @@ def get_more_info(state: dict):
     
     response = send_to_llm(prompt_message)  # Call LLM function
     # response = send_to_azure_openai(prompt_message)  # Call OpenAI LLM function
+    print(f"Chatbot response: {response}")
     
     return {
         **state,
@@ -61,10 +62,16 @@ def get_more_info(state: dict):
     }
 
 def generate_response(state: dict):
+    if state.get("need_more_input") and state.get("followup"):
+        return {
+            **state,
+            "chatbot_response": state["followup"]
+        }
     user_query = state.get("user_query", "")
     hotel_name = state.get("hotel_name", "")
     postcards = state.get("postcards", [])
     search_results = state.get("search_results", [])
+    rewritten_query = state.get("rewritten_query", "")
     
     logger.info(f"Searching for postcards for hotel: {hotel_name}")
 
@@ -84,7 +91,11 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
 
         ### Hotel Details (Postcards Data):
         ```json
+        {hotel_intro},
+        Postcards:
         {postcards_json}
+        Best time to go:
+        {best_time_to_travel}
         ```
 
         ### Instructions:
@@ -100,10 +111,12 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
     ).format(
         hotel_name=hotel_name,
         input_query=user_query,
-        postcards_json=json.dumps(postcards, indent=2)
+        postcards_json=json.dumps(postcards, indent=2),
+        best_time_to_travel=state.get("best_time_to_travel", ""),
+        hotel_intro=state.get("hotel_intro", "")
     )
     
-    response = send_to_llm(prompt_message)
+    response = send_to_azure_openai(prompt_message)
     return {**state, "chatbot_response": response}
 
 def handle_property_search(user_query, search_results, state):
@@ -121,12 +134,13 @@ def handle_property_search(user_query, search_results, state):
         "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country.\n"
         "If the property does not match one or more of the user's interests, mention why you are providing it and how is it relevant.\n"
         "Describe it naturally, highlighting its setting, vibe, and special experiences.\n"
+        "Respond and suggest like you are talking to the user in a friendly, conversational tone.\n"
         "Include a **Postcards** section listing its postcards with a brief introduction.\n"
 
         f"{get_follow_up_instruction(state)}"
     )
     
-    response = send_to_llm(prompt_message)
+    response = send_to_azure_openai(prompt_message)
     return {**state, "chatbot_response": response}
 
 def enrich_results_with_postcards(search_results):

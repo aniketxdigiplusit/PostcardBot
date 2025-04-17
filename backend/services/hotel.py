@@ -1,6 +1,6 @@
 from langchain.schema import HumanMessage
 from qdrant_client import QdrantClient
-from utils.helpers import system_prompt
+from utils.helpers import system_prompt,send_to_llm
 from config.settings import llm, qdrant, COLLECTION_NAME, OLLAMA_API_URL
 import numpy as np
 import logging
@@ -34,8 +34,9 @@ Output only the hotel name or "None".
 """
 
     try:
-        response = llm.invoke([system_prompt, HumanMessage(content=prompt)])
-        hotel_name = response.content.strip()
+        response = send_to_llm(prompt)  # Call LLM function
+        hotel_name = response.strip()
+        print(f"Extracted Hotel Name: {hotel_name}")  # Debugging line
         logger.info(f"✅ Extracted Hotel Name: {hotel_name}")
         return hotel_name if hotel_name.lower() != "none" else ""
     except Exception as e:
@@ -98,6 +99,8 @@ def hotel_followup(state: dict):
     hotel_data = best_result.payload
     hotel_real_name = hotel_data.get("name", "")
     postcards = hotel_data.get("postcards", [])
+    best_time_to_travel = hotel_data.get("bestTimetoTravel", "")
+    hotel_intro = hotel_data.get("intro", "")
 
     # -----------------------
     # Response

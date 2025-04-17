@@ -6,49 +6,40 @@ export default function App() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [priority, setPriority] = useState('');
+    const threadId = "117";
 
-    const threadId = "104"; // ✅ hardcoded thread ID
-     // 🟡 Greet user on first load
-     useEffect(() => {
+    useEffect(() => {
         const greeting = `
 🌟 Welcome to **Postcard Travel Club** – your gateway to conscious luxury travel! 🌟
 
-At Postcard Travel, we believe that travel should be both indulgent and responsible. Our mission is to connect discerning travelers with boutique properties and immersive experiences that celebrate local cultures, histories, and environments, all while promoting responsible tourism. 
+At Postcard Travel, we believe that travel should be both indulgent and responsible. Our mission is to connect discerning travelers with boutique properties and immersive experiences that celebrate local cultures, histories, and environments, all while promoting responsible tourism.
 
 ✨ **What We Offer:**
-- **Curated Stays:** Discover over 200 boutique luxury properties across 30+ countries, each offering unique and authentic experiences.
-- **Immersive Experiences:** Engage in activities that allow you to connect deeply with the communities and landscapes you visit, ensuring your travels are meaningful and impactful.
-- **Community Connections:** Join a global network of conscious luxury travelers, travel designers, storytellers, and boutique properties dedicated to advancing responsible tourism. 
+- **Curated Stays**
+- **Immersive Experiences**
+- **Community Connections**
 
-Whether you're seeking a serene retreat in the Mayan jungle, an adventurous horseback ride in Chile, or an opportunity to meet the Maasai warriors in Kenya, Postcard Travel is here to curate your perfect journey. 
-
-Begin your exploration by sharing your travel aspirations with us. Let's craft experiences that not only fulfill your wanderlust but also contribute positively to the places and people you encounter.
-
-🌍 **Start your conscious luxury journey with Postcard Travel today!**
+🌍 Start your conscious luxury journey today!
         `;
         setMessages([{ sender: "bot", text: greeting }]);
     }, []);
 
-
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        // Show user message immediately
         setMessages(prev => [...prev, { sender: "user", text: input }]);
         setLoading(true);
 
         try {
             const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
                 query: input,
-                priority_field: priority  // ✅ correct priority value
+                priority_field: priority
             });
-            console.log("Priority before sending:", priority);
-
 
             const botResponse = res.data.response || "No response from LLM.";
             setMessages(prev => [...prev, { sender: "bot", text: botResponse }]);
         } catch (err) {
-            console.error("❌ Error sending message:", err);
+            console.error("❌ Error:", err);
             setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
         } finally {
             setLoading(false);
@@ -61,68 +52,166 @@ Begin your exploration by sharing your travel aspirations with us. Let's craft e
     };
 
     return (
-        <div style={{ padding: "20px", fontFamily: "sans-serif", maxWidth: "600px", margin: "auto" }}>
-            {/* Header */}
-            <h2 style={{ background: "#2f80ed", color: "white", padding: "10px", borderRadius: "4px" }}>Postcard Chatbot</h2>
+        <div style={styles.page}>
+            <div style={styles.mainWrapper}>
+                <div style={styles.chatWrapper}>
+                    <h2 style={styles.header}>Postcard Travel Chatbot 🌍</h2>
 
-            {/* Chat */}
-            <div style={{ border: "1px solid #ccc", padding: "10px", height: "400px", overflowY: "auto", marginBottom: "10px" }}>
-                {messages.map((msg, idx) => (
-                    <div key={idx} style={{ textAlign: msg.sender === 'user' ? 'right' : 'left', marginBottom: "8px" }}>
-                        <div style={{
-                            display: "inline-block",
-                            padding: "8px 12px",
-                            backgroundColor: msg.sender === 'user' ? "#2f80ed" : "#e0e0e0",
-                            color: msg.sender === 'user' ? "#fff" : "#000",
-                            borderRadius: "12px"
-                        }}>
-                            {msg.text}
-                        </div>
+                    <div style={styles.chatBox}>
+                        {messages.map((msg, idx) => (
+                            <div key={idx} style={{ textAlign: msg.sender === 'user' ? 'right' : 'left' }}>
+                                <div style={{
+                                    ...styles.message,
+                                    backgroundColor: msg.sender === 'user' ? '#b69b7f' : '#fff6e5',
+                                    color: msg.sender === 'user' ? 'white' : '#5a4a3f',
+                                }}>
+                                    {msg.text}
+                                </div>
+                            </div>
+                        ))}
+                        {loading && <div style={styles.typing}>⏳ Bot is typing...</div>}
                     </div>
-                ))}
-                {loading && <div>Bot is typing...</div>}
-            </div>
 
-            {/* Input */}
-            <div style={{ display: "flex", marginBottom: "10px" }}>
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Type a message..."
-                    style={{ flex: 1, padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
-                />
-                <button
-                    onClick={handleSend}
-                    style={{ marginLeft: "8px", padding: "10px 16px", backgroundColor: "#2f80ed", color: "#fff", border: "none", borderRadius: "4px" }}
-                >
-                    Send
-                </button>
-            </div>
-
-            {/* Containers */}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                {["properties", "location", "postcards", "activities"].map((field) => (
-                    <div
-                        key={field}
-                        onClick={() => setPriority(field)}
-                        style={{
-                            flex: 1,
-                            margin: "4px",
-                            padding: "8px",
-                            background: priority === field ? "#2f80ed" : "#f0f0f0",
-                            color: priority === field ? "white" : "black",
-                            textAlign: "center",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            border: "1px solid #ccc"
-                        }}
-                    >
-                        {field}
+                    <div style={styles.inputArea}>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyPress}
+                            placeholder="Ask about properties, locations, experiences..."
+                            style={styles.input}
+                        />
+                        <button onClick={handleSend} style={styles.sendButton}>Send</button>
                     </div>
-                ))}
+                </div>
+
+                <div style={styles.prioritySidebar}>
+                    <h4 style={styles.sidebarTitle}>Filter by:</h4>
+                    {["properties", "location", "postcards", "activities"].map((field) => (
+                        <button
+                            key={field}
+                            onClick={() => setPriority(field)}
+                            style={{
+                                ...styles.priorityButton,
+                                backgroundColor: priority === field ? '#b69b7f' : '#fffaf2',
+                                color: priority === field ? '#fff' : '#5a4a3f',
+                                borderColor: priority === field ? '#b69b7f' : '#d3c0ab'
+                            }}
+                        >
+                            {field.charAt(0).toUpperCase() + field.slice(1)}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
 }
+
+const styles = {
+    page: {
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#f9f4ef',
+        fontFamily: "'Georgia', serif",
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    mainWrapper: {
+        display: 'flex',
+        width: '90%',
+        height: '90%',
+        backgroundColor: '#f9f4ef',
+        borderRadius: '16px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+    },
+    chatWrapper: {
+        flex: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '20px',
+    },
+    prioritySidebar: {
+        flex: 1,
+        borderLeft: '1px solid #e0d6c5',
+        padding: '20px',
+        backgroundColor: '#f5ebe0',
+        borderTopRightRadius: '16px',
+        borderBottomRightRadius: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '12px',
+    },
+    sidebarTitle: {
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        marginBottom: '8px',
+        color: '#5a4a3f'
+    },
+    header: {
+        textAlign: 'center',
+        color: '#5a4a3f',
+        fontSize: '2rem',
+        fontWeight: 600,
+        marginBottom: '16px'
+    },
+    chatBox: {
+        flex: 1,
+        backgroundColor: '#f5ebe0',
+        borderRadius: '12px',
+        padding: '20px',
+        overflowY: 'auto',
+        marginBottom: '20px',
+        border: '1px solid #e0d6c5'
+    },
+    message: {
+        padding: '12px 18px',
+        borderRadius: '20px',
+        margin: '8px 0',
+        display: 'inline-block',
+        maxWidth: '75%',
+        fontSize: '1rem',
+        whiteSpace: 'pre-wrap',
+        lineHeight: 1.5,
+    },
+    typing: {
+        fontStyle: 'italic',
+        color: '#8e7b6c',
+        marginTop: '12px',
+    },
+    inputArea: {
+        display: 'flex',
+        gap: '10px',
+        alignItems: 'center',
+    },
+    input: {
+        flex: 1,
+        padding: '14px 16px',
+        borderRadius: '10px',
+        border: '1px solid #c1b1a0',
+        fontSize: '1rem',
+        backgroundColor: '#fffaf2',
+        color: '#4b3f36'
+    },
+    sendButton: {
+        backgroundColor: '#b69b7f',
+        color: 'white',
+        border: 'none',
+        padding: '14px 20px',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        fontWeight: 'bold'
+    },
+    priorityButton: {
+        padding: '10px 14px',
+        borderRadius: '8px',
+        border: '2px solid',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        fontSize: '0.95rem',
+        width: '100%',
+        textAlign: 'left',
+    }
+};

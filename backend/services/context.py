@@ -2,7 +2,7 @@ from services.chat_db import get_chat_messages
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,34 +33,29 @@ You are an AI assistant for a travel chatbot. Your task is to only refine user q
 **New User Query:** 
 {user_input}
 
-### STRICT RULES:
-- DO NOT modify greetings or small talk. Just return them unchanged.
-- DO NOT add any locations, activities, budgets, preferences, or examples unless the user explicitly confirms them.
-- DO NOT assume, invent, or guess user interests or preferences.
-- DO NOT enrich the query using general knowledge or common sense.
-- ONLY rewrite if the user is referring back to something from the previous chat like "the first one", "those hotels", "that location", etc.
-- If the query is standalone (e.g., "I want to go to Rajasthan"), just repeat it exactly as it is.
 
-### Instructions:
-1. If the query is a follow-up that depends on previous context, rewrite it to be clear and standalone.
-2. If the query is standalone or a greeting, return it unchanged.
-3. If the query is asking for a hotel from previous context, rewrite it with the hotel name.
+**Guidelines:**
+-  Keep greetings or small talk unchanged.
+- Refrain from adding locations, activities, budgets, or preferences unless explicitly stated.
+- Avoid assuming, inferring, or enriching based on general knowledge.
+- DO NOT enrich the query using general knowledge or common sense.
+- When the query references previous chat (e.g., "the first one", "those hotels"), rewrite it to be clear and standalone.
+- If the query is already clear (e.g., "I want to go to Rajasthan"), repeat it ex
    Example: "Tell me more about the first hotel you suggested" → "Tell me more about Windermere Riverhouse"
+-If the query is asking answering to a preference from previous context, rewrite the previous query with the preference.
+    Example: " I prefer budget more"- " I want to go nepal in 200 budget and my preference is budget"
 
 ### Output Format:
-Just reply with the query text only.
-No explanations.
-No comments.
-No markdown.
-No formatting.
-
+Return only the refined query text, without comments, explanations, or formatting. 
 If you don't need to modify the query, repeat it exactly as it is.
+
 """
+    response= send_to_azure_openai(llm_prompt)
 
-    response = llm.invoke([system_prompt, HumanMessage(content=llm_prompt)])
-    print(f"LLM Response: {response.content.strip()}")  # Debugging line
+    # response = send_to_azure_openai([system_prompt, HumanMessage(content=llm_prompt)])
+    print(f"LLM Response: {response.strip()}")  # Debugging line
 
-    enriched_query = response.content.strip() or user_input
+    enriched_query = response.strip() or user_input
 
     state["user_query"] = enriched_query
     return state

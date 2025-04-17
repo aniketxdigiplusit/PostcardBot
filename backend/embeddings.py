@@ -28,3 +28,4 @@ def semantic_match(query: str, labels, vectors, top_k=3, threshold=0.5):
 
 location_labels, location_vectors = load_encoded_vectors("encoded_locations.json")
 activity_labels, activity_vectors = load_encoded_vectors("encoded_activities.json")
+property_labels, property_vectors = load_encoded_vectors("encoded_properties.json")
