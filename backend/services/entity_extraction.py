@@ -6,7 +6,8 @@ from langchain.prompts import PromptTemplate
 from config.settings import sllm
 from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
 from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai,send_to_openai
-from services.hotel import generate_embedding
+# from services.hotel import generate_embedding
+from utils.helpers import generate_embedding
 from config.db import  get_preferences, save_preferences
 
 def chunk_text(text, chunk_size=3, overlap=2):
@@ -79,6 +80,7 @@ DO NOT GIVE ANY EXPLANATION
     )
 
     response = send_to_openai(rendered_prompt)
+    # response = send_to_llm(rendered_prompt)
     print(response)
 
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.strip(), flags=re.IGNORECASE).strip()
@@ -254,8 +256,10 @@ Only return the assistant’s message.
 """
         ).format(user_query=user_query, extras_str=extras_str, chosen_priority=chosen_priority)
 
-        response = sllm.invoke([system_prompt, HumanMessage(content=priority_prompt)])
-        print(response.content)
+        # response = sllm.invoke([system_prompt, HumanMessage(content=priority_prompt)])
+        response = send_to_openai(priority_prompt)
+        # response = send_to_llm(priority_prompt)
+        print(response)
         # Clean up the response 
       
 
@@ -264,7 +268,7 @@ Only return the assistant’s message.
             **state,
             "search_results": [],
             "need_more_input": True,
-            "followup": response.content.strip()
+            "followup": response.strip()
         }
 
     return state

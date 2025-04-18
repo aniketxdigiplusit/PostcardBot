@@ -122,3 +122,28 @@ def send_to_openai(prompt_message):
     except Exception as e:
         print(f"Exception occurred: {e}")
         return None
+    
+def generate_embedding(text: str):
+    """Generate embedding using OpenAI text-embedding-ada-002 model."""
+
+    if not text.strip():
+        print("generate_embedding() called with empty text.")
+        return []
+
+    try:
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text.strip()
+        )
+
+        embedding = response.data[0].embedding
+
+        if not embedding:
+            print("Empty embedding generated for input text.")
+            return []
+
+        return embedding
+
+    except Exception as e:
+        print(f"Unexpected error in generate_embedding(): {e}")
+        return []

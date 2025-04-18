@@ -43,7 +43,8 @@ Output only the classification value: greeting, hotel_followup, or normal.
 Do not explain.
 Do not output anything else.
 """
-    response= send_to_llm(classification_prompt)  # Call LLM function
+    response= send_to_openai(classification_prompt)  # Call LLM function
+    # response= send_to_llm(classification_prompt)  # Call LLM function
     classification = response.lower().strip()
 
     # response = llm.invoke([system_prompt, HumanMessage(content=classification_prompt)])

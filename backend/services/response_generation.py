@@ -51,7 +51,8 @@ def get_more_info(state: dict):
         "(e.g. hiking, beach, spa). Keep it short and conversational."
     )
     
-    response = send_to_llm(prompt_message)  # Call LLM function
+    response = send_to_openai(prompt_message)  # Call LLM function
+    # response = send_to_llm(prompt_message)  # Call LLM function
     # response = send_to_azure_openai(prompt_message)  # Call OpenAI LLM function
     print(f"Chatbot response: {response}")
     
@@ -117,6 +118,7 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
     )
     
     response = send_to_openai(prompt_message)
+    # response = send_to_llm(prompt_message)
     return {**state, "chatbot_response": response}
 
 def handle_property_search(user_query, search_results, state):
@@ -141,6 +143,7 @@ def handle_property_search(user_query, search_results, state):
     )
     
     response = send_to_openai(prompt_message)
+    # response = send_to_llm(prompt_message)
     return {**state, "chatbot_response": response}
 
 def enrich_results_with_postcards(search_results):

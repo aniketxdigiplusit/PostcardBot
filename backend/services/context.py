@@ -50,6 +50,7 @@ If you don't need to modify the query, repeat it exactly as it is.
 
 """
     response= send_to_openai(llm_prompt)
+    # response= send_to_llm(llm_prompt)
 
     # response = send_to_azure_openai([system_prompt, HumanMessage(content=llm_prompt)])
     print(f"LLM Response: {response.strip()}")  # Debugging line

@@ -23,4 +23,4 @@ app.register_blueprint(chat_blueprint, url_prefix="/chat")
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()   # This will now properly create chat_history table
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001)
