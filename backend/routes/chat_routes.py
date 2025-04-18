@@ -2,6 +2,7 @@ import uuid
 from flask import Blueprint, request, jsonify
 from services.chat_service import create_chat_graph
 from services.chat_db import save_message
+from models import db,ChatHistory
 
 chat_blueprint = Blueprint("chat", __name__)
 
@@ -71,3 +72,36 @@ def continue_chat(chat_id):
         "response": response.get("chatbot_response", ""),
         "search_results": response.get("search_results", [])
     })
+
+
+@chat_blueprint.route("/threads", methods=["GET"])
+def get_all_threads():
+    try:
+        threads = db.session.query(ChatHistory.thread_id).distinct().all()
+        unique_thread_ids = [t[0] for t in threads]
+        return jsonify({"thread_ids": unique_thread_ids})
+    except Exception as e:
+        print(f"Error retrieving thread IDs: {e}")
+        return jsonify({"error": "Failed to retrieve thread IDs"}), 500
+    
+@chat_blueprint.route("/threads/<thread_id>", methods=["GET"])
+def get_thread_messages(thread_id):
+    try:
+        messages = ChatHistory.query.filter_by(thread_id=thread_id) \
+                                    .order_by(ChatHistory.timestamp.desc()) \
+                                    .all()
+
+        message_list = [
+            {
+                "id": msg.id,
+                "user_message": msg.user_message,
+                "bot_response": msg.bot_response,
+                "timestamp": msg.timestamp.isoformat()
+            }
+            for msg in messages
+        ]
+
+        return jsonify({"thread_id": thread_id, "messages": message_list})
+    except Exception as e:
+        print(f"Error retrieving messages for thread {thread_id}: {e}")
+        return jsonify({"error": "Failed to retrieve messages"}), 500
