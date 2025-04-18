@@ -81,7 +81,7 @@ def retrieve_properties(state: dict):
     results = qdrant.query_points(
         collection_name="postcard-openai",
         query=query_vector,
-        limit=50 if priority == "properties" else 100,
+        limit=100,
         # using="activity_vector",
         with_payload=True
     )

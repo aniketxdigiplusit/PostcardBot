@@ -18,5 +18,5 @@ qdrant = QdrantClient(
     timeout=30.0,                    # optional: avoids hanging on slow calls
            # ✅ suppress version mismatch warning
 )
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postcard")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postcard-openai")
 
