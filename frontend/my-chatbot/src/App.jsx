@@ -6,22 +6,81 @@ export default function App() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [priority, setPriority] = useState('');
-    const threadId = "118";
+    const [priorityMessages, setPriorityMessages] = useState({});
+;
 
-    useEffect(() => {
-        const greeting = `
-🌟 Welcome to **Postcard Travel Club** – your gateway to conscious luxury travel! 🌟
+    const threadId = "156";
 
-At Postcard Travel, we believe that travel should be both indulgent and responsible. Our mission is to connect discerning travelers with boutique properties and immersive experiences that celebrate local cultures, histories, and environments, all while promoting responsible tourism.
+        
+    //     useEffect(() => {
+    //         const fetchStartupMessages = async () => {
+    //             try {
+    //                 const res = await axios.get("http://localhost:5000/chat/startup-messages");
+    //                 const welcome = res.data.welcome;
+    //                 const priorityMsgs = res.data.priority_messages;
+        
+    //                 setMessages([{ sender: "bot", text: welcome }]);
+    //                 setPriorityMessages(priorityMsgs);
+    //             } catch (err) {
+    //                 console.error("❌ Failed to load startup messages:", err);
+    //             }
+    //         };
+        
+    //         fetchStartupMessages();
+    //     }, []);
+        
+    //     const handlePriorityClick = (field) => {
+    //         setPriority(field);
+        
+    //         const msg = priorityMessages[field];
+    //         if (msg) {
+    //             setMessages(prev => [...prev, { sender: "bot", text: msg }]);
+    //         } else {
+    //             setMessages(prev => [...prev, { sender: "bot", text: "Let's begin your journey! ✨" }]);
+    //         }
+    //     };
+        
+        
+        
 
-✨ **What We Offer:**
-- **Curated Stays**
-- **Immersive Experiences**
-- **Community Connections**
+    // const handleSend = async () => {
+    //     if (!input.trim()) return;
 
-🌍 Start your conscious luxury journey today!
-        `;
-        setMessages([{ sender: "bot", text: greeting }]);
+    //     setMessages(prev => [...prev, { sender: "user", text: input }]);
+    //     setLoading(true);
+
+    //     try {
+    //         const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
+    //             query: input,
+    //             priority_field: priority
+    //         });
+
+    //         const botResponse = res.data.response || "No response from LLM.";
+    //         setMessages(prev => [...prev, { sender: "bot", text: botResponse }]);
+    //     } catch (err) {
+    //         console.error("❌ Error:", err);
+    //         setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
+    //     } finally {
+    //         setLoading(false);
+    //         setInput("");
+    //     }
+    // };
+
+    // const handleKeyPress = (e) => {
+    //     if (e.key === 'Enter') handleSend();
+    // };
+     // ✅ Fetch welcome message on initial load
+     useEffect(() => {
+        const fetchWelcome = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/chat/startup-messages/welcome');
+                setMessages([{ sender: "bot", text: res.data.response }]);
+            } catch (err) {
+                console.error("Error fetching welcome message:", err);
+            }
+        };
+
+        fetchWelcome();
     }, []);
 
     const handleSend = async () => {
@@ -50,6 +109,19 @@ At Postcard Travel, we believe that travel should be both indulgent and responsi
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') handleSend();
     };
+
+    // ✅ Trigger priority message on button click
+    const handlePriorityClick = async (field) => {
+        setPriority(field);
+        try {
+            const res = await axios.get(`http://localhost:5000/chat/startup-messages/${field}`);
+            const msg = res.data.response;
+            setMessages(prev => [...prev, { sender: "bot", text: msg }]);
+        } catch (error) {
+            console.error("Failed to fetch priority message:", error);
+        }
+    };
+
 
     return (
         <div style={styles.page}>
@@ -86,11 +158,12 @@ At Postcard Travel, we believe that travel should be both indulgent and responsi
                 </div>
 
                 <div style={styles.prioritySidebar}>
-                    <h4 style={styles.sidebarTitle}>Filter by:</h4>
+                    <h4 style={styles.sidebarTitle}>Prioritise using
+                        :</h4>
                     {["properties", "location", "postcards", "activities"].map((field) => (
                         <button
                             key={field}
-                            onClick={() => setPriority(field)}
+                            onClick={() => handlePriorityClick(field)} // updated
                             style={{
                                 ...styles.priorityButton,
                                 backgroundColor: priority === field ? '#b69b7f' : '#fffaf2',
@@ -101,6 +174,7 @@ At Postcard Travel, we believe that travel should be both indulgent and responsi
                             {field.charAt(0).toUpperCase() + field.slice(1)}
                         </button>
                     ))}
+
                 </div>
             </div>
         </div>

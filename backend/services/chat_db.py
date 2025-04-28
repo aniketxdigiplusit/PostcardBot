@@ -24,6 +24,7 @@ def get_chat_messages(thread_id: str, limit: int = 10) -> list:
         messages = ChatHistory.query.filter_by(thread_id=thread_id) \
                                     .order_by(ChatHistory.timestamp.desc()) \
                                     .limit(limit).all()
+    
 
         history = []
         for msg in messages:
@@ -34,16 +35,16 @@ def get_chat_messages(thread_id: str, limit: int = 10) -> list:
         logger.error(f"Error retrieving chat messages: {e}")
         return []
 
-def get_chat_history(thread_id: str, limit: int = 10) -> str:
-    """Get chat history formatted as string for LLM"""
-    try:
-        messages = ChatHistory.query.filter_by(thread_id=thread_id) \
-                                    .order_by(ChatHistory.timestamp.asc()) \
-                                    .limit(limit).all()
-        history = ""
-        for msg in messages:
-            history += f"User: {msg.user_message}\nBot: {msg.bot_response}\n\n"
-        return history.strip()
-    except Exception as e:
-        logger.error(f"Error retrieving chat history: {e}")
-        return ""
+# def get_chat_history(thread_id: str, limit: int = 10) -> str:
+#     """Get chat history formatted as string for LLM"""
+#     try:
+#         messages = ChatHistory.query.filter_by(thread_id=thread_id) \
+#                                     .order_by(ChatHistory.timestamp.asc()) \
+#                                     .limit(limit).all()
+#         history = ""
+#         for msg in messages:
+#             history += f"User: {msg.user_message}\nBot: {msg.bot_response}\n\n"
+#         return history.strip()
+#     except Exception as e:
+#         logger.error(f"Error retrieving chat history: {e}")
+#         return ""

@@ -1,9 +1,14 @@
 # db.py
 import sqlite3
+from flask import Flask, jsonify
 import json
 import os
+
+
 DB_FILE = "chat_preferences.db"
 DB_PATH=os.path.join(os.path.dirname(__file__), DB_FILE)
+app = Flask(__name__)
+
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -20,8 +25,6 @@ def init_db():
     """)
     conn.commit()
     conn.close()
-
-
 
 def save_preferences(thread_id, location=None, activities=None, months=None, prices=None, resolved_priority=None):
     # Convert lists to JSON strings
@@ -78,50 +81,48 @@ def get_preferences(thread_id):
             }
         return None
 
-def update_preferences(thread_id, location=None, activities=None, months=None, prices=None):
-    existing = get_preferences(thread_id)
-    updated = {
-        "location": location or existing.get("location"),
-        "activities": activities or existing.get("activities"),
-        "months": months or existing.get("months"),
-        "prices": prices or existing.get("prices"),
-    }
-    save_preferences(
-        thread_id,
-        updated["location"],
-        updated["activities"],
-        updated["months"],
-        updated["prices"]
-    )
 
-def delete_preferences(thread_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM preferences WHERE thread_id = ?", (thread_id,))
-    conn.commit()
-    conn.close()
-def get_all_preferences():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM preferences")
-    rows = cursor.fetchall()
-    conn.close()
-    return [
-        {
-            "thread_id": row[0],
-            "location": row[1],
-            "activities": json.loads(row[2] or "[]"),
-            "months": json.loads(row[3] or "[]"),
-            "prices": json.loads(row[4] or "[]")
-        }
-        for row in rows
-    ]
-def clear_all_preferences():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM preferences")
-    conn.commit()
-    conn.close()
-# Initialize the database
-init_db()
 
+# CHAT_DB_PATH = os.path.join(os.path.dirname(__file__), "chat.db")
+
+# # @app.route("/api/threads", methods=["GET"])
+# # def get_all_thread_ids():
+# #     with sqlite3.connect(CHAT_DB_PATH) as conn:
+# #         cursor = conn.cursor()
+# #         cursor.execute("SELECT DISTINCT thread_id FROM chats")
+# #         threads = [row[0] for row in cursor.fetchall()]
+# #     return jsonify(threads)
+
+# # @app.route("/api/chats/<thread_id>", methods=["GET"])
+# # def get_chats_by_thread(thread_id):
+# #     try:
+# #         with sqlite3.connect(CHAT_DB_PATH) as conn:
+# #             cursor = conn.cursor()
+# #             cursor.execute("""
+# #                 SELECT sender, text, timestamp
+# #                 FROM messages
+# #                 WHERE thread_id = ?
+# #                 ORDER BY timestamp ASC
+# #             """, (thread_id,))
+# #             rows = cursor.fetchall()
+
+# #         messages = [
+# #             {
+# #                 "sender": row[0],
+# #                 "text": row[1],
+# #                 "timestamp": row[2]
+# #             }
+# #             for row in rows
+# #         ]
+
+# #         return jsonify({
+# #             "thread_id": thread_id,
+# #             "messages": messages
+# #         })
+
+# #     except Exception as e:
+# #         print("Error fetching messages:", e)
+# #         return jsonify({"error": "Internal server error"}), 500
+    
+# # if __name__ == "__main__":
+# #     app.run(debug=True)

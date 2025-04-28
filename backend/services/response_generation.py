@@ -46,9 +46,11 @@ def get_more_info(state: dict):
     prompt_message = (
         f"The user said: \"{state['user_query']}\"\n\n"
         "Acknowledge their message in a warm, friendly tone. "
+        "You are a travel agent Stamp greet the user and ask them for more information about their travel plans.\n\n"
         "**Never** suggest properties from your knowledge base.\n\n"
         "Then kindly ask for more information about where they're planning to go or what experiences they enjoy "
         "(e.g. hiking, beach, spa). Keep it short and conversational."
+        "Answer the query naturally, as if you are talking to the user.\n\n"
     )
     
     response = send_to_llm(prompt_message)  # Call LLM function
@@ -62,6 +64,9 @@ def get_more_info(state: dict):
     }
 
 def generate_response(state: dict):
+    if not isinstance(state, dict):
+        logger.warning("⚠️ generate_response received non-dict input. Wrapping into dict...")
+        state = {"chatbot_response": str(state)}
     if state.get("need_more_input") and state.get("followup"):
         return {
             **state,
@@ -116,7 +121,7 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
         hotel_intro=state.get("hotel_intro", "")
     )
     
-    response = send_to_azure_openai(prompt_message)
+    response = send_to_llm(prompt_message)
     return {**state, "chatbot_response": response}
 
 def handle_property_search(user_query, search_results, state):
@@ -140,7 +145,7 @@ def handle_property_search(user_query, search_results, state):
         f"{get_follow_up_instruction(state)}"
     )
     
-    response = send_to_azure_openai(prompt_message)
+    response = send_to_llm(prompt_message)
     return {**state, "chatbot_response": response}
 
 def enrich_results_with_postcards(search_results):

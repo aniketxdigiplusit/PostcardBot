@@ -22,6 +22,38 @@ def chunk_text(text, chunk_size=3, overlap=2):
         start = end - overlap
     return chunks
 
+# def determine_crud_operation(new_data, old_data, user_query=""):
+#     # Convert sets to lists so json.dumps doesn't break
+#     def safe_json(data):
+#         return json.dumps(json.loads(json.dumps(data, default=list)), indent=2)
+
+#     crud_prompt = f"""
+# You are a system that determines how to update a user's travel preferences based on the **latest user query** and **existing preferences**.
+
+# Analyze whether the user's query indicates:
+# - replacing their old preferences (e.g., they want to explore a new destination or they dont want a previous destination or activity anymore),
+# - merging (e.g., they want to add an activity or time preference to the existing location),
+# - or ignore if nothing new is added.
+
+# User Query: "{user_query}"
+
+# Old Preferences: {safe_json(old_data)}
+
+# New Input from Query: {safe_json(new_data)}
+
+# Respond with ONLY ONE WORD: "merge", "replace", or "ignore".
+# Example:
+# - If the user says "I want to go to Paris and I also want to go to London", the system should respond with "merge".
+# - If the user says "I want to go to Paris instead of London", the system should respond with "replace".
+# -If the user says" I dont want to do boating anymore i want to do trekking", the system should respond with "replace".
+# """
+
+#     response = send_to_llm(crud_prompt)
+#     print("🧠 CRUD decision:", response)
+#     decision = response.strip().lower()
+#     if decision not in ["merge", "replace", "ignore"]:
+#         return "merge"
+#     return decision
 
 def normalize_entities(state: dict):
     thread_id = state.get("thread_id")
@@ -29,9 +61,6 @@ def normalize_entities(state: dict):
     messages = get_chat_messages(thread_id, limit=6)
     last_2 = messages[:2] if len(messages) > 6 else messages
     print(f"Last 2 messages: {last_2}")  # Debugging line
-    if not last_2:
-        print("No chat history found for the given thread_id")
-        return state
     prompt = PromptTemplate.from_template(
 """
 You are a travel normalization system.
@@ -43,8 +72,8 @@ Extract only the information directly mentioned by the user.
 
 **Instructions:**
 - Only extract **real locations** (countries, regions, cities) **IF** they are explicitly named.
-- DO NOT extract words like "city," "town," "place," or "destination" as locations.
-- DO NOT assume a location based on context.
+- Do not extract words like "city," "town," "place," or "destination" as locations.
+- Do not assume a location based on context.
 - If no explicit location is mentioned, return an empty array.
 -Extract price given by user in numbers.
 - Extract months or seasons ONLY if they are explicitly mentioned, e.g. "July", "Winter", "Summer".
@@ -56,8 +85,8 @@ Extract only the information directly mentioned by the user.
     - Winter → ["December", "January", "February"]
     - Spring → ["March", "April"]
 - Do not extract months as the season.
--Identify user's priority if mentioned, such as "travel_time", "location", "activities", "property", or "postcard".
--User query will contain any of the above keywords. and use above words only as outputs.
+-Identify user's priority if user query mentions properites, such as "travel_time", "location", "activities", "property", or "postcard".
+-User query will contain any of the above keywords. and use above words only as outputs for resolved_priority.
 -If user did not mention any priority then return empty array.
 Output a valid JSON object only :
 
@@ -78,7 +107,7 @@ DO NOT GIVE ANY EXPLANATION
         last_2=json.dumps(last_2, indent=2)
     )
 
-    response = send_to_azure_openai(rendered_prompt)
+    response = send_to_llm(rendered_prompt)
     print(response)
 
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.strip(), flags=re.IGNORECASE).strip()
@@ -172,6 +201,64 @@ DO NOT GIVE ANY EXPLANATION
     state["prices"] = user_prices
 
     return state
+
+
+    # new_location = matched_locations[0][0] if matched_locations else None
+    # existing_location = existing_prefs.get("location")
+
+    # existing_activities = set(existing_prefs.get("activities", [])) if existing_prefs else set()
+    # new_activities = set([a[0] for a in matched_activities])
+
+    # new_data = {
+    #     "location": new_location,
+    #     "activities": list(new_activities),
+    #     "months": user_months,
+    #     "prices": user_prices,
+    #     "resolved_priority": resolved_priority
+    # }
+
+    # operation = determine_crud_operation(new_data, existing_prefs, user_query=state.get("user_query", ""))
+    # print(f"Operation determined: {operation}")
+
+    # # Decide location
+    # if operation == "replace":
+    #     location_to_save = new_location or existing_location
+    #     activities_to_save = list(new_activities)
+    #     months_to_save = user_months
+    #     prices_to_save = user_prices
+
+    # elif operation == "merge":
+    #     # Keep existing location if it's present, else use new one
+    #     location_to_save = new_location or existing_location
+
+    #     activities_to_save = list(existing_activities.union(new_activities))
+
+    #     existing_months = set(existing_prefs.get("months", [])) if existing_prefs else set()
+    #     months_to_save = list(existing_months.union(user_months)) if user_months else existing_prefs.get("months", [])
+
+    #     existing_prices = set(existing_prefs.get("prices", [])) if existing_prefs else set()
+    #     prices_to_save = list(existing_prices.union(user_prices)) if user_prices else existing_prefs.get("prices", [])
+
+    # else:  # ignore
+    #     print("🛑 No update required.")
+    #     return state
+
+    # print(f"🧠 Updating preferences in DB for thread_id: {thread_id}")
+    # save_preferences(
+    #     thread_id=thread_id,
+    #     location=location_to_save,
+    #     activities=activities_to_save,
+    #     months=months_to_save,
+    #     prices=prices_to_save,
+    #     resolved_priority=resolved_priority
+    # )
+
+    # state["matched_locations"] = matched_locations
+    # state["matched_activities"] = matched_activities
+    # state["months"] = user_months
+    # state["prices"] = user_prices
+
+    # return state
 
 def extract_info(state: dict):
     thread_id = state.get("thread_id")
@@ -269,42 +356,42 @@ Only return the assistant’s message.
 
     return state
 
-# def extract_resolved_priority(state: dict):
-#     user_reply = state.get("user_query", "")
-    
-#     print("🧠 Resolving user priority from reply:", user_reply)
+from utils.helpers import send_to_llm
 
-#     # ---- Prompt to classify the reply ----
-#     priority_extraction_prompt = PromptTemplate.from_template(
-#         """
-# You are a helpful assistant. The user previously mentioned multiple preferences and was asked which one they care about most.
+def conversational_priority_prompt(user_input):
+    prompt = f"""
+You are a friendly travel assistant at Postcard Travel Club.
 
-# Now the user replied: "{user_reply}"
+The user said: "{user_input}"
 
-# Extract which one they want to prioritize the most:
-# - Choose from one of these: "budget", "travel time", "location", "activity", "property", "postcard"
-# - Return only a JSON string like this:
-#   {{ "resolved_priority": "budget" }}
-#         """
-#     ).format(user_reply=user_reply)
+Your goal is to help the user decide what to explore first by responding conversationally.
 
-#     response = sllm.invoke([
-#         system_prompt,
-#         HumanMessage(content=priority_extraction_prompt)
-#     ])
+Available options are:
+- Properties
+- Locations
+- Experiences
+- Postcards
 
-#     print("🔍 Resolved priority raw response:", response.content)
+Ask a friendly follow-up question that nudges the user to pick one of these, but DO NOT list them like a menu. Be natural, informal, and keep the tone helpful.
 
-#     try:
-#         match = re.search(r'"resolved_priority"\s*:\s*"([^"]+)"', response.content)
-#         resolved = match.group(1) if match else None
-#     except Exception:
-#         resolved = None
+Return only your conversational reply.
+"""
+    response = send_to_llm(prompt)
+    return response.strip()
 
-#     if resolved:
-#         state["resolved_priority"] = resolved.strip().lower()
-#         print("✅ User resolved priority:", resolved)
-#     else:
-#         print("⚠️ Could not extract resolved priority")
+def detect_missing_priority(state: dict):
+    user_query = state.get("user_query", "")
+    chosen_priority = state.get("priority_field", "")
 
-#     return state
+    if not chosen_priority:
+        from services.chat_service import conversational_priority_prompt
+        prompt_response = conversational_priority_prompt(user_query)
+
+        return {
+            **state,
+            "chatbot_response": prompt_response,
+            "need_more_input": True,
+            "search_results": []
+        }
+
+    return state

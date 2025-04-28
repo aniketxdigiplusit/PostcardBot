@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def get_context(state: dict):
     user_input = state.get("user_query", "").strip()
-    thread_id = state.get("chat_id")
+    thread_id = state.get("thread_id")
 
     if not thread_id:
         logger.warning("Missing thread_id in state")
@@ -26,7 +26,7 @@ def get_context(state: dict):
     print(f"Formatted History: {formatted_history}")  
 
     llm_prompt = f"""
-You are an AI assistant for a travel chatbot. Your task is to only refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history. Do not try to reply to the query.
+You are an AI assistant for a postcard travel chatbot. Your task is to only refine user queries **ONLY** when they are incomplete or ambiguous and rely on previous chat history. Do not try to reply to the query.
 
 **Chat History:** 
 {formatted_history}
@@ -38,18 +38,18 @@ Instructions:
 - Keep greetings or small talk unchanged.
 - Do not insert or assume locations, activities, budgets, or preferences unless mentioned clearly.
 - If the query is already clear (e.g., "I want to go to Rajasthan"), repeat it exactly.
+-If the query is asking what the chatbot or postcard travel company can do, rewrite it only if it is not clear.
+    Example: "What can you do?" → "What can you do to help me plan my trip?"
 -If the query is asking for a specific hotel, replace it with the exact name from chat history.
-    Example: "Tell me more about the first hotel you suggested" → "Tell me more about Windermere Riverhouse"
-   Example: "Tell me more about the first hotel you suggested" → "Tell me more about Windermere Riverhouse"
+    Example: "Tell me more about the first hotel you suggested previously" → "Tell me more about Windermere Riverhouse"
 -If the query is asking answering to a preference from previous context, rewrite the previous query with the preference.
     Example: " I prefer budget more"- " I want to go nepal in 200 budget and my preference is budget"
-
 ### Output Format:
 Return only the refined query text, without comments, explanations, or formatting. 
 If you don't need to modify the query, repeat it exactly as it is.
 
 """
-    response= send_to_azure_openai(llm_prompt)
+    response= send_to_llm(llm_prompt)
 
     # response = send_to_azure_openai([system_prompt, HumanMessage(content=llm_prompt)])
     print(f"LLM Response: {response.strip()}")  # Debugging line
