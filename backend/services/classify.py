@@ -41,6 +41,7 @@ Do not output anything else.
 """
     response= send_to_llm(classification_prompt)  # Call LLM function
     classification = response.lower().strip()
+    print(f"Classification: {classification}")  # Debugging line
 
     # response = llm.invoke([system_prompt, HumanMessage(content=classification_prompt)])
     # classification = response.content.strip().lower()

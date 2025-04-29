@@ -7,6 +7,7 @@ from services.classify import classify_input
 from services.hotel import hotel_followup
 from config.db import get_preferences
 from services.postcard import explain_postcard_travel, explain_about_postcard
+from services.discovery import discovery_flow
 
 # def process_query(state: dict):
 #     message = state["user_query"].lower()
@@ -28,6 +29,7 @@ def create_chat_graph():
     graph.add_node("detect_conflicting_priorities", detect_conflicting_priorities)
     graph.add_node("generate_response", generate_response)
     graph.add_node("explain_about_postcard", explain_about_postcard)
+    graph.add_node("discovery_flow", discovery_flow)  
 
     # ---------------- Entry ----------------
     graph.set_entry_point("get_context")
@@ -51,8 +53,9 @@ def create_chat_graph():
     # EXTRACT INFO: do we need to ask for more or resolve conflicting preferences?
     graph.add_conditional_edges(
         "extract_info",
-        lambda s: "get_more_info"
-        if not s.get("location") and not s.get("activities")  
+        # lambda s: "get_more_info"
+        # if not s.get("location") and not s.get("activities")  
+        lambda s: "discovery_flow" if s.get("discovery_mode") 
         else "detect_conflicting_priorities"
         if (s.get("months") or s.get("prices")) and not get_preferences(s.get("thread_id", "")).get("resolved_priority")  # 🧠 Ask user what to prioritize
         else "retrieve_properties"  # ✅ We're good
@@ -67,6 +70,7 @@ def create_chat_graph():
     graph.add_edge("hotel_followup", "generate_response")
     graph.add_edge("retrieve_properties", "generate_response")
     graph.add_edge("explain_about_postcard", END) 
+    graph.add_edge("discovery_flow", END)
     
     graph.add_edge("get_more_info", END)
     graph.add_edge("generate_response", END)

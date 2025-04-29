@@ -203,62 +203,6 @@ DO NOT GIVE ANY EXPLANATION
     return state
 
 
-    # new_location = matched_locations[0][0] if matched_locations else None
-    # existing_location = existing_prefs.get("location")
-
-    # existing_activities = set(existing_prefs.get("activities", [])) if existing_prefs else set()
-    # new_activities = set([a[0] for a in matched_activities])
-
-    # new_data = {
-    #     "location": new_location,
-    #     "activities": list(new_activities),
-    #     "months": user_months,
-    #     "prices": user_prices,
-    #     "resolved_priority": resolved_priority
-    # }
-
-    # operation = determine_crud_operation(new_data, existing_prefs, user_query=state.get("user_query", ""))
-    # print(f"Operation determined: {operation}")
-
-    # # Decide location
-    # if operation == "replace":
-    #     location_to_save = new_location or existing_location
-    #     activities_to_save = list(new_activities)
-    #     months_to_save = user_months
-    #     prices_to_save = user_prices
-
-    # elif operation == "merge":
-    #     # Keep existing location if it's present, else use new one
-    #     location_to_save = new_location or existing_location
-
-    #     activities_to_save = list(existing_activities.union(new_activities))
-
-    #     existing_months = set(existing_prefs.get("months", [])) if existing_prefs else set()
-    #     months_to_save = list(existing_months.union(user_months)) if user_months else existing_prefs.get("months", [])
-
-    #     existing_prices = set(existing_prefs.get("prices", [])) if existing_prefs else set()
-    #     prices_to_save = list(existing_prices.union(user_prices)) if user_prices else existing_prefs.get("prices", [])
-
-    # else:  # ignore
-    #     print("🛑 No update required.")
-    #     return state
-
-    # print(f"🧠 Updating preferences in DB for thread_id: {thread_id}")
-    # save_preferences(
-    #     thread_id=thread_id,
-    #     location=location_to_save,
-    #     activities=activities_to_save,
-    #     months=months_to_save,
-    #     prices=prices_to_save,
-    #     resolved_priority=resolved_priority
-    # )
-
-    # state["matched_locations"] = matched_locations
-    # state["matched_activities"] = matched_activities
-    # state["months"] = user_months
-    # state["prices"] = user_prices
-
-    # return state
 
 def extract_info(state: dict):
     thread_id = state.get("thread_id")
@@ -279,15 +223,12 @@ def extract_info(state: dict):
         top_location = matched_locations[0][0]
         matched_countries = [top_location]
 
-
         # Check if state["location"] exists and has at least one overlapping location
         existing_locations = state.get("location", [])
 
         if not all(loc in existing_locations for loc in matched_countries):
             state["location"] = matched_countries
         
-
-
 
     existing_activities = state.get("activities", [])
     for activity, _ in matched_activities:
@@ -305,6 +246,14 @@ def extract_info(state: dict):
         state["months"] = existing_months
 
     state["has_enough_info"] = bool(state.get("location") or state.get("activities") or state.get("months"))
+
+        # ✅ Check if discovery_mode should be activated
+    if not state.get("priority_field") and (state["location"] or state["activities"] or state["months"]):
+        state["discovery_mode"] = True
+    else:
+        state["discovery_mode"] = False
+
+    state["has_enough_info"] = bool(state["location"] or state["activities"] or state["months"])
     return state
 
 def detect_conflicting_priorities(state: dict):
