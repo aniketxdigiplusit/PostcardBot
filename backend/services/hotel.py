@@ -1,6 +1,6 @@
 from langchain.schema import HumanMessage
 from qdrant_client import QdrantClient
-from utils.helpers import system_prompt,send_to_llm
+from utils.helpers import system_prompt,send_to_llm,send_to_llm
 from config.settings import llm, qdrant, COLLECTION_NAME, OLLAMA_API_URL
 import numpy as np
 import logging
@@ -37,7 +37,7 @@ Output only the hotel name or "None".
         response = send_to_llm(prompt)  # Call LLM function
         hotel_name = response.strip()
         print(f"Extracted Hotel Name: {hotel_name}")  # Debugging line
-        logger.info(f"✅ Extracted Hotel Name: {hotel_name}")
+        
         return hotel_name if hotel_name.lower() != "none" else ""
     except Exception as e:
         logger.error(f"🔥 Error extracting hotel name: {e}")
@@ -97,21 +97,38 @@ def hotel_followup(state: dict):
         return {**state, "chatbot_response": f"Sorry, I couldn't find a good match for '{hotel_name}'."}
 
     hotel_data = best_result.payload
+    state["price_info"] = hotel_data.get("pricesStartingAt", "Price not available")
+    state["hotel_name"] = hotel_name
+    state["hotel_intro"] = hotel_data.get("intro", "")
+    state["postcards"] = hotel_data.get("postcards", [])
+    state["best_time_to_travel"] = hotel_data.get("bestTimetoTravel", "")
+
     hotel_real_name = hotel_data.get("name", "")
     postcards = hotel_data.get("postcards", [])
     best_time_to_travel = hotel_data.get("bestTimetoTravel", "")
     hotel_intro = hotel_data.get("intro", "")
+    price= hotel_data.get("price", "")
 
     # -----------------------
     # Response
     # -----------------------
+    response_lines = [
+        f"🏨 **{hotel_real_name}**",
+        f"📍 {hotel_intro}",
+        f"🕒 Best time to visit: {best_time_to_travel}",
+        f"💰 Estimated Price: {price}",
+        "",
+        "✨ **Experiences & Postcards:**"
+    ]
 
-    response_text = f"Here are some postcards from **{hotel_real_name}**:\n"
     if not postcards:
-        response_text += "No postcards found for this hotel."
+        response_lines.append("No postcards found for this hotel.")
     else:
-        for card in postcards:
-            response_text += f"- **{card.get('name', '')}**: {card.get('intro', '')}\n"
+        for idx, card in enumerate(postcards, start=1):
+            name = card.get('name', 'Unnamed Experience')
+            intro = card.get('intro', 'No description provided.')
+            response_lines.append(f"{idx}. **{name}**: {intro}")
+    response_text = "\n".join(response_lines)
 
     return {**state, "chatbot_response": response_text, "search_results": [hotel_data]}
 

@@ -1,6 +1,6 @@
 from services.hotel import generate_embedding, cosine_similarity
 from config.settings import qdrant
-from utils.helpers import send_to_llm
+from utils.helpers import send_to_llm, send_to_llm
 from config.db import get_preferences
 import numpy as np
 import random
@@ -52,9 +52,10 @@ def rewrite_query_with_preferences(user_query, prefs):
 
     return rewritten_query
 def retrieve_properties(state: dict):
+    print("🚨 retrieve_properties() is being called 🚨")
     start_time = time.time()  
     thread_id = state.get("thread_id")
-    priority= state.get("priority_field", "properties")  # Default to "properties" if not set
+    priority= state.get("priority_field", "properties") 
     prefs = get_preferences(thread_id) or {}
 
     locations = [prefs.get("location")] if prefs.get("location") else []

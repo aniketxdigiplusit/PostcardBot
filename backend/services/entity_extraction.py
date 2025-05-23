@@ -1,15 +1,16 @@
 import json
 import re
+from typing import List, Dict, Any
 from services.chat_db import get_chat_messages
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.prompts import PromptTemplate
 from config.settings import sllm
 from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai, send_to_llm
 from services.hotel import generate_embedding
 from config.db import  get_preferences, save_preferences
 
-def chunk_text(text, chunk_size=3, overlap=2):
+def chunk_text(text, chunk_size=2, overlap=1):
     words = text.split()
     chunks = []
     start = 0
@@ -58,9 +59,11 @@ def chunk_text(text, chunk_size=3, overlap=2):
 def normalize_entities(state: dict):
     thread_id = state.get("thread_id")
     print(f"Thread ID: {thread_id}")
+
     messages = get_chat_messages(thread_id, limit=6)
     last_2 = messages[:2] if len(messages) > 6 else messages
-    print(f"Last 2 messages: {last_2}")  # Debugging line
+     
+
     prompt = PromptTemplate.from_template(
 """
 You are a travel normalization system.
@@ -78,29 +81,25 @@ Extract only the information directly mentioned by the user.
 -Extract price given by user in numbers.
 - Extract months or seasons ONLY if they are explicitly mentioned, e.g. "July", "Winter", "Summer".
 - Convert seasons to the corresponding months using this mapping:
-- Map seasons to months using:
-    - Summer → ["April", "May", "June"]
-    - Monsoon → ["July", "August", "September"]
-    - Autumn → ["October", "November"]
-    - Winter → ["December", "January", "February"]
-    - Spring → ["March", "April"]
 - Do not extract months as the season.
--Identify user's priority if user query mentions properites, such as "travel_time", "location", "activities", "property", or "postcard".
--User query will contain any of the above keywords. and use above words only as outputs for resolved_priority.
--If user did not mention any priority then return empty array.
+-Do not extract words like location , place, city as possible location.
+-Extract direct words in query like location, activities , time to travel, prices as resolved priority
+
 Output a valid JSON object only :
 
 Example:
 {{
   "possible_locations": [],
   "possible_activities": [],
-  "possible_months": []
-  "prices": []
+  "possible_months": [],
+  "prices": [],
   "resolved_priority": []
+
+  
 }}
 DO NOT GIVE ANY EXPLANATION
 """
-)
+    )
 
     rendered_prompt = prompt.format(
         user_query=state["user_query"],
@@ -113,6 +112,7 @@ DO NOT GIVE ANY EXPLANATION
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.strip(), flags=re.IGNORECASE).strip()
     if not clean_json.strip().startswith("{"):
         clean_json = "{}"
+
     try:
         extracted = json.loads(clean_json)
     except json.JSONDecodeError:
@@ -121,23 +121,22 @@ DO NOT GIVE ANY EXPLANATION
             "possible_activities": [],
             "possible_months": [],
             "prices": [],
-            "resolved_priority": None
+            # "resolved_priority": []
         }
 
-        # Extracted from LLM
     user_locations = extracted.get("possible_locations", [])
     user_activities = extracted.get("possible_activities", [])
     user_months = extracted.get("possible_months", [])
     user_prices = extracted.get("prices", [])
-    resolved_priority = extracted.get("resolved_priority")
-    if isinstance(resolved_priority, list) and resolved_priority:
-        resolved_priority = resolved_priority[0]  # take first element if list
-    elif not isinstance(resolved_priority, str):
-        resolved_priority = None  # fallback
+    # resolved_priority = extracted.get("resolved_priority")
 
-    
+    # if isinstance(resolved_priority, list) and resolved_priority:
+    #     resolved_priority = resolved_priority[0].strip().lower()
+    # elif isinstance(resolved_priority, str):
+    #     resolved_priority = resolved_priority.strip().lower()
+    # else:
+    #     resolved_priority = None
 
-    # Semantic match
     matched_locations = semantic_match(" ".join(user_locations), location_labels, location_vectors)
     chunks = chunk_text(state['user_query'])
 
@@ -146,40 +145,56 @@ DO NOT GIVE ANY EXPLANATION
         matched = semantic_match(chunk, activity_labels, activity_vectors)
         matched_activities.extend(matched)
 
-    # ✅ Set into state first
-    state["months"] = user_months
-    state["prices"] = user_prices
     state["matched_locations"] = matched_locations
     state["matched_activities"] = matched_activities
-    if resolved_priority:
-        state["resolved_priority"] = resolved_priority
+    state["months"] = user_months
+    state["prices"] = user_prices
+    # if resolved_priority in ["location", "activities", "months", "prices"]:
+    #     state["resolved_priority"] = resolved_priority
+
     print(f"Matched locations: {matched_locations}")
     print(f"Matched activities: {matched_activities}")
 
     existing_prefs = get_preferences(thread_id) or {}
 
-    # ⚠️ Merge only if new data is present
-    location_to_save = matched_locations[0][0] if matched_locations else existing_prefs.get("location")
+    new_location = matched_locations[0][0] if matched_locations else None
+    if new_location and new_location.lower() not in ["location", "place", "city"]:
+        location_to_save = new_location
+    else:
+        location_to_save = existing_prefs.get("location")
 
-    existing_activities = set(existing_prefs.get("activities", [])) if existing_prefs else set()
-    new_activities = set([a[0] for a in matched_activities])
-    activities_to_save = list(existing_activities.union(new_activities))  # ✅ merge
+    existing_activities = list(existing_prefs.get("activities", []))
+    new_activities = [a[0] for a in matched_activities]
 
-    existing_months = set(existing_prefs.get("months", [])) if existing_prefs else set()
+    # Remove duplicates and preserve order
+    for activity in new_activities:
+        if activity in existing_activities:
+            existing_activities.remove(activity)  # Move to end
+        existing_activities.append(activity)
+
+    activities_to_save = existing_activities
+
+
+    existing_months = set(existing_prefs.get("months", []))
     months_to_save = list(existing_months.union(user_months)) if user_months else existing_prefs.get("months", [])
 
-    existing_prices = set(existing_prefs.get("prices", [])) if existing_prefs else set()
+    existing_prices = set(existing_prefs.get("prices", []))
     prices_to_save = list(existing_prices.union(user_prices)) if user_prices else existing_prefs.get("prices", [])
 
-    # Only update if we actually have something new
-    has_updates = any([
-        location_to_save and (not existing_prefs or location_to_save != existing_prefs.get("location")),
-        resolved_priority and resolved_priority != existing_prefs.get("resolved_priority"),
+    # resolved_priority_to_save = resolved_priority if resolved_priority in ["location", "activities", "months", "prices"] else existing_prefs.get("resolved_priority")
+    # # if resolved_priority_to_save=={} :
+    # #             resolved_priority_to_save==None
+    # print(f"Resolved priority to save: {resolved_priority_to_save}")
 
-        set(activities_to_save) != set(existing_prefs.get("activities", [])) if existing_prefs else False,
-        set(months_to_save) != set(existing_prefs.get("months", [])) if existing_prefs else False,
-        set(prices_to_save) != set(existing_prefs.get("prices", [])) if existing_prefs else False
+    has_updates = any([
+        location_to_save and location_to_save != existing_prefs.get("location"),
+        # resolved_priority_to_save and resolved_priority_to_save != existing_prefs.get("resolved_priority"),
+        set(activities_to_save) != set(existing_prefs.get("activities", [])),
+        set(months_to_save) != set(existing_prefs.get("months", [])),
+        set(prices_to_save) != set(existing_prefs.get("prices", []))
     ])
+    resolved_priority=existing_prefs.get("resolved_priority")
+    asked_resolve_priority = existing_prefs.get("asked_resolve_priority", False)
 
     if has_updates:
         print(f"🧠 Updating preferences in DB for thread_id: {thread_id}")
@@ -189,24 +204,56 @@ DO NOT GIVE ANY EXPLANATION
             activities=activities_to_save,
             months=months_to_save,
             prices=prices_to_save,
-            resolved_priority=resolved_priority
+            resolved_priority=resolved_priority,
+            asked_resolve_priority=asked_resolve_priority
+
         )
 
+    priority_field = state.get("priority_field")
+    print(f"Priority field: {priority_field}")
+    has_some_prefs = any([user_locations, user_activities, user_months, user_prices])
 
+    if not priority_field and has_some_prefs:
+        state["discovery_mode"] = True
+        print("🌱 Discovery mode ON: priority not set, but some preferences exist.")
+    else:
+        state["discovery_mode"] = False
+        print("❌ Discovery mode OFF: either priority was explicitly set or no prefs found.")
 
-    # Save to state for immediate use
-    state["matched_locations"] = matched_locations
-    state["matched_activities"] = matched_activities
-    state["months"] = user_months
-    state["prices"] = user_prices
+    
+    
+    prefs = get_preferences(state.get("thread_id")) or {}
+
+    state["missing_fields"] = [
+        k for k in ["location", "activities", "months", "prices"]
+        if not prefs.get(k)
+    ]
+    state["asked_resolve_priority"] = prefs.get("asked_resolve_priority", False)
+
 
     return state
 
 
 
 def extract_info(state: dict):
+    print("🧠 extract_info() called.")
+    print(f"➡️  discovery_mode: {state.get('discovery_mode')}")
+    print(f"➡️  resolved_priority: {state.get('resolved_priority')}")
+    print(f"➡️  missing_fields: {state.get('missing_fields')}")
+    print(f"➡️  need_more_input: {state.get('need_more_input')}")
+    print(f"➡️  priority_field: {state.get('priority_field')}")
+
+
     thread_id = state.get("thread_id")
     prefs = get_preferences(thread_id) or {}
+
+    #  # ✅ Pull latest resolved_priority from DB
+    # if not state.get("resolved_priority"):
+    #     state["resolved_priority"] = prefs.get("resolved_priority")
+
+    # Also ensure discovery_mode is still valid
+    if not state.get("priority_field") and (prefs.get("location") or prefs.get("activities") or prefs.get("months")):
+        state["discovery_mode"] = True
     matched_locations = state.get("matched_locations", [])
     matched_activities = state.get("matched_activities", [])
     possible_months = state.get("possible_months", [])
@@ -217,10 +264,15 @@ def extract_info(state: dict):
     state["prices"] = prefs.get("prices", [])
     state["resolved_priority"] = prefs.get("resolved_priority")
 
+    print(f"Matched locations: {state["location"]}")
+    print(f"Matched activities: {state["activities"]}")
+    print(f"Matched months: {state["months"]}")
+    print(f"Matched prices: {state["prices"]}")
+
 
     if matched_locations:
         # Take only the top matched location (highest score)
-        top_location = matched_locations[0][0]
+        top_location = matched_locations[0]
         matched_countries = [top_location]
 
         # Check if state["location"] exists and has at least one overlapping location
@@ -236,7 +288,7 @@ def extract_info(state: dict):
             existing_activities.append(activity)
 
     if existing_activities:
-        state["activities"] = existing_activities
+        state["activities"] = existing_activities[-4:]
     
     existing_months = state.get("months", [])
     for month in possible_months:
@@ -254,6 +306,13 @@ def extract_info(state: dict):
         state["discovery_mode"] = False
 
     state["has_enough_info"] = bool(state["location"] or state["activities"] or state["months"])
+    
+    
+    print("asked_resolve_priority", state["asked_resolve_priority"])
+    print(state["activities"])
+ 
+
+    print("Debugging",state.get("resolved_priority"), state.get("discovery_mode"))
     return state
 
 def detect_conflicting_priorities(state: dict):
@@ -305,7 +364,6 @@ Only return the assistant’s message.
 
     return state
 
-from utils.helpers import send_to_llm
 
 def conversational_priority_prompt(user_input):
     prompt = f"""

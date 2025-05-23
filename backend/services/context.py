@@ -2,7 +2,7 @@ from services.chat_db import get_chat_messages
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_llm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,8 @@ Instructions:
 - Keep greetings or small talk unchanged.
 - Do not insert or assume locations, activities, budgets, or preferences unless mentioned clearly.
 - If the query is already clear (e.g., "I want to go to Rajasthan"), repeat it exactly.
+-If the query is about particular preference referencing to previous chat make it clear.
+    Example: "Rajasthan" → "I want to go to Rajasthan in July"- referenced from previous chat
 -If the query is asking what the chatbot or postcard travel company can do, rewrite it only if it is not clear.
     Example: "What can you do?" → "What can you do to help me plan my trip?"
 -If the query is asking for a specific hotel, replace it with the exact name from chat history.

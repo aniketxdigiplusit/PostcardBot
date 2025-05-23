@@ -13,62 +13,67 @@ app = Flask(__name__)
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Ensure the table exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS preferences (
-            thread_id TEXT PRIMARY KEY,
-            location TEXT,
-            activities TEXT,
-            months TEXT,
-            prices TEXT,
-            resolved_priority TEXT  )   
-    
+    thread_id TEXT PRIMARY KEY,
+    location TEXT,
+    activities TEXT,
+    months TEXT,
+    prices TEXT,
+    resolved_priority TEXT,
+    asked_resolve_priority BOOLEAN DEFAULT FALSE
+)
     """)
     conn.commit()
     conn.close()
 
-def save_preferences(thread_id, location=None, activities=None, months=None, prices=None, resolved_priority=None):
-    # Convert lists to JSON strings
+
+
+def save_preferences(thread_id, location=None, activities=None, months=None, prices=None, resolved_priority=None, asked_resolve_priority=False):
     print(f"🧠 Saving preferences to DB for thread_id: {thread_id}")
     print("location:", location)
     print("activities:", activities)
     print("months:", months)
     print("prices:", prices)
     print("resolved_priority:", resolved_priority)
+    print("asked_resolve_priority:", asked_resolve_priority)
+
     activities_json = json.dumps(activities or [])
     months_json = json.dumps(months or [])
     prices_json = json.dumps(prices or [])
+    resolved_priority_json = json.dumps(resolved_priority or None)
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
 
-        # Check if entry exists
         cursor.execute("SELECT thread_id FROM preferences WHERE thread_id = ?", (thread_id,))
         exists = cursor.fetchone()
 
         if exists:
-            # Update existing
             cursor.execute("""
                 UPDATE preferences
-                SET location = ?, activities = ?, months = ?, prices = ?, resolved_priority = ?
+                SET location = ?, activities = ?, months = ?, prices = ?, resolved_priority = ?, asked_resolve_priority = ?
                 WHERE thread_id = ?
-            """, (location, activities_json, months_json, prices_json, resolved_priority, thread_id))
+            """, (location, activities_json, months_json, prices_json, resolved_priority_json, asked_resolve_priority, thread_id))
         else:
-            # Insert new
             cursor.execute("""
-                INSERT INTO preferences (thread_id, location, activities, months, prices, resolved_priority)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (thread_id, location, activities_json, months_json, prices_json, resolved_priority))
-        print("Preferences saved successfully!")
-        print(resolved_priority)
+                INSERT INTO preferences (thread_id, location, activities, months, prices, resolved_priority, asked_resolve_priority)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (thread_id, location, activities_json, months_json, prices_json, resolved_priority_json, asked_resolve_priority))
 
+        print("✅ Preferences saved successfully")
         conn.commit()
+
+
 
 def get_preferences(thread_id):
     print(f"🧠 Retrieving preferences from DB for thread_id: {thread_id}")
     
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT location, activities, months, prices, resolved_priority FROM preferences WHERE thread_id = ?", (thread_id,))
+        cursor.execute("SELECT location, activities, months, prices, resolved_priority, asked_resolve_priority FROM preferences WHERE thread_id = ?", (thread_id,))
         row = cursor.fetchone()
 
         if row:
@@ -77,9 +82,11 @@ def get_preferences(thread_id):
                 "activities": json.loads(row[1] or "[]"),
                 "months": json.loads(row[2] or "[]"),
                 "prices": json.loads(row[3] or "[]"),
-                "resolved_priority": row[4]
+                "resolved_priority": None if row[4] == "null" else row[4],
+                "asked_resolve_priority": bool(row[5]) 
             }
         return None
+
 
 
 

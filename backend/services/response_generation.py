@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_llm, send_to_llm
 from services.chat_db import save_message
 import logging
 
@@ -76,9 +76,12 @@ def generate_response(state: dict):
     hotel_name = state.get("hotel_name", "")
     postcards = state.get("postcards", [])
     search_results = state.get("search_results", [])
+    price_info=state.get("price_info", "Not specified")
+    print(f"price_info: {price_info}")
+
     rewritten_query = state.get("rewritten_query", "")
     
-    logger.info(f"Searching for postcards for hotel: {hotel_name}")
+    print(f"Searching for postcards for hotel: {hotel_name}")
 
     if hotel_name and postcards:
         return handle_hotel_followup(user_query, hotel_name, postcards, state)
@@ -88,8 +91,10 @@ def generate_response(state: dict):
 def handle_hotel_followup(user_query, hotel_name, postcards, state):
     prompt_message = PromptTemplate.from_template(
         """
-        You are a **travel agent** assisting a user who wants more details about a hotel.
+        You are a **travel agent** assisting a user who wants some details about a hotel.
         The user is asking about activities, experiences, or amenities at **{hotel_name}**.
+        Respond to the user with respect to the user's query and the hotel details provided below.
+        Answer like you are talking to the user in a friendly, conversational tone.
 
         ### User's Query:
         "{input_query}"
@@ -101,16 +106,19 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
         {postcards_json}
         Best time to go:
         {best_time_to_travel}
+
+        - Price range: {price_info}
+
         ```
 
         ### Instructions:
-        1️⃣ Determine if the user is asking for **general hotel information** or a **specific activity**.
+        1️⃣ Determine if the user is asking for **general hotel information** or a **specific Information about the hotel**.
         2️⃣ If general info, highlight **all postcards** showcasing the hotel’s unique experiences.
-        3️⃣ If a specific activity is mentioned:
-            - Provide details **only if it exists** in the postcards.
+        3️⃣ If a specific information is mentioned in user query:
+            - Provide details **only if it exists**.
             - Otherwise, suggest alternative available activities.
         4️⃣ Format responses in an easy-to-read numbered list.
-        5️⃣ Do **not** make up activities not listed in the postcards.
+        5️⃣ Do **not** make up information not listed in the postcards.
         6️⃣ Keep responses concise and friendly.
         """
     ).format(
@@ -118,7 +126,8 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
         input_query=user_query,
         postcards_json=json.dumps(postcards, indent=2),
         best_time_to_travel=state.get("best_time_to_travel", ""),
-        hotel_intro=state.get("hotel_intro", "")
+        hotel_intro=state.get("hotel_intro", ""),
+        price_info=state.get("price_info", "Price not available")
     )
     
     response = send_to_llm(prompt_message)
@@ -132,15 +141,22 @@ def handle_property_search(user_query, search_results, state):
     prompt_message = (
         f"The user said: {user_query}\n\n"
         f"Priority selected by the user: **{priority}**\n"
+        "Here are users preferences:\n"
+        f"Location: {state.get('location')}\n"
+        f"Activities: {state.get('activities')}\n"
+        f"Best time to travel: {state.get('best_time_to_travel')}\n"
+        f"Budget: {state.get('prices')}\n\n"
         "The user is looking for properties that match their travel interests.\n\n"
         "You have a list of properties that closest match the user's query.\n\n"
         "Here are some matching properties in JSON format:\n"
         f"{json.dumps(search_results, indent=2)}\n\n"
+        "Answer with respect to the user's preferences.\n"
         "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country.\n"
         "If the property does not match one or more of the user's interests, mention why you are providing it and how is it relevant.\n"
         "Describe it naturally, highlighting its setting, vibe, and special experiences.\n"
         "Respond and suggest like you are talking to the user in a friendly, conversational tone.\n"
         "Include a **Postcards** section listing its postcards with a brief introduction.\n"
+        "Add some emojis to make it more engaging.\n\n"
 
         f"{get_follow_up_instruction(state)}"
     )
@@ -152,6 +168,7 @@ def enrich_results_with_postcards(search_results):
     for result in search_results:
         if album_id := result.get("id"):
             result["postcards"] = fetch_postcards(album_id)
+        
 
 def get_follow_up_instruction(state):
     has_location = bool(state.get("location"))

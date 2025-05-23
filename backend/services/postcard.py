@@ -1,4 +1,4 @@
-from utils.helpers import send_to_llm
+from utils.helpers import send_to_llm, send_to_llm
 
 def explain_postcard_travel(user_query):
     prompt = f"""

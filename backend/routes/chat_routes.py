@@ -6,11 +6,14 @@ from flask import Blueprint, jsonify
 from models import db, ChatHistory
 from qdrant_client import QdrantClient
 from flask import request
+from config.settings import qdrant
+from embeddings import location_labels, activity_labels, property_labels
+import random
 
 
 chat_blueprint = Blueprint("chat", __name__)
 # Initialize Qdrant client
-qdrant = QdrantClient(host="localhost", port=6333)
+
 def get_site_stats_from_qdrant():
     all_points = []
     offset = None
@@ -94,10 +97,39 @@ def get_startup_messages(input):
         "activities": f"We offer {stats['activities']} unforgettable experiences 🌿 – from cultural immersions to adventure getaways. What excites you most?"
     }
 
+    if input == "location":
+        random_locations = random.sample(location_labels, min(len(location_labels), 18))
+        top_locations = random_locations[:4]
+        remaining_locations = random_locations[4:]
+        return jsonify({
+            "response": priority_messages["location"],
+            "top_locations": top_locations,
+            "more_locations": remaining_locations
+        })
+    elif input == "activities":
+        random_activities = random.sample(activity_labels, min(len(activity_labels), 12))
+        return jsonify({
+            "response": priority_messages["activities"],
+            "top_activities": random_activities[:4],
+            "more_activities": random_activities[4:]
+        })
+
+    elif input == "properties":
+        random_properties = random.sample(property_labels, min(len(property_labels), 12))
+        return jsonify({
+            "response": priority_messages["properties"],
+            "top_properties": random_properties[:4],
+            "more_properties": random_properties[4:]
+        })
+
     if input in priority_messages:
         return jsonify({"response": priority_messages[input]})
-    elif input == "welcome":
+
+    # ✅ Default fallback (welcome)
+    if input == "welcome":
         return jsonify({"response": welcome_message})
+
+    return jsonify({"response": "Sorry, I didn't understand your selection."})
 
 
 @chat_blueprint.route("/", methods=["POST"])
