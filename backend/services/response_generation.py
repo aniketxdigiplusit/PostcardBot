@@ -6,9 +6,10 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_llm
+from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
 from services.chat_db import save_message
 import logging
+from services.followup import generate_followups_from_response
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +55,15 @@ def get_more_info(state: dict):
     )
     
     response = send_to_llm(prompt_message)  # Call LLM function
+    followups = generate_followups_from_response(response, [], state.get("user_query", ""))
+    print(f"followups: {followups}")  # Debugging line
     # response = send_to_azure_openai(prompt_message)  # Call OpenAI LLM function
     print(f"Chatbot response: {response}")
     
     return {
         **state,
         "chatbot_response": response,
+        "followups": followups,
         "need_more_input": True
     }
 
@@ -131,10 +135,11 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
     )
     
     response = send_to_llm(prompt_message)
-    return {**state, "chatbot_response": response}
+    followups = generate_followups_from_response(response, [], user_query)
+    return {**state, "chatbot_response": response, "followups": followups,}
 
 def handle_property_search(user_query, search_results, state):
-    enrich_results_with_postcards(search_results)
+    
     priority = state.get("priority_field", "")
 
     
@@ -162,12 +167,13 @@ def handle_property_search(user_query, search_results, state):
     )
     
     response = send_to_llm(prompt_message)
-    return {**state, "chatbot_response": response}
+    followups = generate_followups_from_response(response, [], user_query)
+    return {**state, "chatbot_response": response, "followups": followups,}
 
-def enrich_results_with_postcards(search_results):
-    for result in search_results:
-        if album_id := result.get("id"):
-            result["postcards"] = fetch_postcards(album_id)
+# def enrich_results_with_postcards(search_results):
+#     for result in search_results:
+#         if album_id := result.get("id"):
+#             result["postcards"] = fetch_postcards(album_id)
         
 
 def get_follow_up_instruction(state):

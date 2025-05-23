@@ -18,11 +18,13 @@ export default function App() {
     const [moreActivities, setMoreActivities] = useState([]);
     const [topProperties, setTopProperties] = useState([]);
     const [moreProperties, setMoreProperties] = useState([]);
+    const [followups, setFollowups] = useState([]);
 
 
 
 
-    const threadId = "242";
+
+    const threadId = "245";
 
         
   
@@ -46,27 +48,40 @@ export default function App() {
     }, []);
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+  if (!input.trim()) return;
 
-        setMessages(prev => [...prev, { sender: "user", text: input }]);
-        setLoading(true);
+  setMessages(prev => [...prev, { sender: "user", text: input }]);
+  setLoading(true);
 
-        try {
-            const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
-                query: input,
-                priority_field: priority
-            });
+  try {
+    const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
+      query: input,
+      priority_field: priority
+    });
+    console.log("🟢 Backend returned:", res.data);
 
-            const botResponse = res.data.response || "No response from LLM.";
-            setMessages(prev => [...prev, { sender: "bot", text: botResponse }]);
-        } catch (err) {
-            console.error("❌ Error:", err);
-            setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
-        } finally {
-            setLoading(false);
-            setInput("");
-        }
-    };
+
+    const botResponse = res.data.response || "No response from LLM.";
+    const followupSuggestions = res.data.followups || [];
+
+    setMessages(prev => [...prev, { sender: "bot", text: botResponse }]);
+
+    if (Array.isArray(followupSuggestions)) {
+      setFollowups(followupSuggestions);
+    } else {
+      setFollowups([]);
+    }
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
+    setFollowups([]);
+  } finally {
+    setLoading(false);
+    setInput("");
+  }
+};
+
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') handleSend();
@@ -129,22 +144,57 @@ export default function App() {
         }
     };
     const handleSendFromButton = async (text) => {
-    setMessages(prev => [...prev, { sender: "user", text }]);
-    setLoading(true);
+  setMessages(prev => [...prev, { sender: "user", text }]);
+  setLoading(true);
 
-    try {
-        const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
-        query: text,
-        priority_field: priority
-        });
-        setMessages(prev => [...prev, { sender: "bot", text: res.data.response }]);
-    } catch (err) {
-        console.error("❌ Error sending button text:", err);
-        setMessages(prev => [...prev, { sender: "bot", text: "Error processing your selection." }]);
-    } finally {
-        setLoading(false);
+  try {
+    const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
+      query: text,
+      priority_field: priority
+    });
+
+    setMessages(prev => [...prev, { sender: "bot", text: res.data.response }]);
+
+    console.log("🔁 Response from backend:", res.data);
+
+    if (res.data.followups && Array.isArray(res.data.followups)) {
+      setFollowups(res.data.followups);
+    } else {
+      setFollowups([]);  // Clear old ones if not returned
     }
-    };
+
+  } catch (err) {
+    console.error("❌ Error sending button text:", err);
+    setMessages(prev => [...prev, { sender: "bot", text: "Error processing your selection." }]);
+    setFollowups([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+    const handleFollowupClick = async (text) => {
+  setMessages(prev => [...prev, { sender: "user", text }]);
+  setLoading(true);
+
+  try {
+    const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
+      query: text // ❌ No priority field here
+    });
+
+    const botResponse = res.data.chatbot_response || res.data.response || "No response from LLM.";
+    const followupSuggestions = res.data.followups || [];
+
+    setMessages(prev => [...prev, { sender: "bot", text: botResponse }]);
+    setFollowups(followupSuggestions);  // 👈 update followups
+  } catch (err) {
+    console.error("❌ Error sending follow-up:", err);
+    setMessages(prev => [...prev, { sender: "bot", text: "Error processing follow-up." }]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     
 
@@ -205,6 +255,37 @@ export default function App() {
 
 
                     {loading && <div style={styles.typing}>⏳ Bot is typing...</div>}
+
+                    {followups.length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                        <p style={{ fontWeight: 'bold', color: '#5a4a3f', fontFamily: "'Georgia', serif" }}>
+                        
+                        </p>
+                        {followups.map((item, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => handleSendFromButton(item)}
+                            style={{
+                            margin: '6px',
+                            padding: '10px 18px',
+                            borderRadius: '20px',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #ddd1c1',
+                            color: '#5a4a3f',
+                            cursor: 'pointer',
+                            fontFamily: "'Georgia', serif",
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                            opacity: 0,
+                            animation: `fadeInUp 0.4s ease ${idx * 0.1}s forwards`
+                            }}
+                        >
+                            {item}
+                        </button>
+                        ))}
+                    </div>
+                    )}
+
 
                     {topLocations.length > 0 && (
                         <div style={{ marginTop: '12px' }}>
@@ -351,7 +432,7 @@ export default function App() {
                         )}
                     </div>
                     )}
-
+                    
 
                 </div>
 

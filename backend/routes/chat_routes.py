@@ -147,6 +147,7 @@ def start_chat():
         "priority_field": priority_field  # pass it to the state
     }
     response = graph.invoke(state) #Runs the bot logic and gets a reply.
+    result = response.get("result", {})
 
     save_message(
         thread_id=chat_id,
@@ -156,7 +157,7 @@ def start_chat():
 
     return jsonify({
         "thread_id": chat_id,
-        "response": response.get("chatbot_response", "")
+        "response": response.get("chatbot_response", ""),"followups": response.get("followups", []) 
     })
 
 
@@ -169,12 +170,14 @@ def continue_chat(chat_id):
     original_query = data.get("query", "")
     priority_field = data.get("priority_field", "")  # ✅ get priority from frontend
     print("Priority Field Received:", priority_field)
+    result = data.get("result", {})
 
 
     state = {
         "user_query": original_query,
         "thread_id": chat_id,
-        "priority_field": priority_field  # ✅ pass it to the state
+        "priority_field": priority_field,  # ✅ pass it to the state
+        "followups": result.get("followups", []) 
     }
 
     graph = create_chat_graph()
@@ -192,10 +195,12 @@ def continue_chat(chat_id):
     )
 
     return jsonify({
-        "thread_id": chat_id,
-        "response": response.get("chatbot_response", ""),
-        "search_results": response.get("search_results", [])
-    })
+    "thread_id": chat_id,
+    "response": response.get("chatbot_response", ""),
+    "search_results": response.get("search_results", []),
+    "followups": response.get("followups", [])  # ✅ This was missing
+})
+
 
 
 chat_api = Blueprint("chat_api", __name__)

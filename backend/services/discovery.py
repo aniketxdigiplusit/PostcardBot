@@ -7,6 +7,7 @@ from services.hotel import generate_embedding, cosine_similarity
 from services.chat_db import get_chat_messages
 from services.entity_extraction import normalize_entities
 from config.db import save_preferences, get_preferences
+from services.followup import generate_followups_from_response
 
 # def discovery_flow(state: dict):
 #     """
@@ -160,11 +161,13 @@ Use soft language, for example:
 Do not repeat what was already said. Ask just one thing at a time.
 """
         response = send_to_llm(prompt)
+        followups = generate_followups_from_response(response, [], state.get("user_query", ""))
         return {
             **state,
             "chatbot_response": response.strip(),
             "need_more_input": False,
-            "ready_to_resolve_priority": True
+            "ready_to_resolve_priority": True,
+            "followups": followups
 
         }
 
@@ -192,6 +195,7 @@ Kindly ask them:
 Keep your tone warm and curious. Don’t repeat what’s already known. Return only the question.
 """
     response = send_to_llm(prompt)
+    followups = generate_followups_from_response(response, [], state.get("user_query", ""))
     thread_id = state.get("thread_id")
     prefs = get_preferences(thread_id) or {}
     location = prefs.get("location", [])
@@ -213,7 +217,8 @@ Keep your tone warm and curious. Don’t repeat what’s already known. Return o
     return {
         **state,
         "chatbot_response": response.strip(),
-        "need_more_input": True
+        "need_more_input": True, 
+        "followups": followups,
     }
 
 def extract_resolved_priority(state: dict):
@@ -258,10 +263,12 @@ Only output one of the above values. No explanation.
         resolved_priority=priority,
         asked_resolve_priority=asked_resolve_priority
     )
+    followups = generate_followups_from_response(priority, [], state.get("user_query", ""))
 
     return {
         **state,
-        "resolved_priority": priority
+        "resolved_priority": priority,
+        "followup": followups,
     }
 
 def basic_property_search(preferences, resolved_priority=None):

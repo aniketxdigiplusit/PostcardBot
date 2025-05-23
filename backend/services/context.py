@@ -46,6 +46,9 @@ Instructions:
     Example: "Tell me more about the first hotel you suggested previously" → "Tell me more about Windermere Riverhouse"
 -If the query is asking answering to a preference from previous context, rewrite the previous query with the preference.
     Example: " I prefer budget more"- " I want to go nepal in 200 budget and my preference is budget"
+-If the query is one word location or activity or a hotelname, just leave it as it is.
+    Example: "Rajasthan" → "Rajasthan"
+    Example: "Hiking" → "Hiking"
 ### Output Format:
 Return only the refined query text, without comments, explanations, or formatting. 
 If you don't need to modify the query, repeat it exactly as it is.
