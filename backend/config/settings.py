@@ -12,8 +12,8 @@ sllm = ChatOllama(model="gemma2:2b", temperature=0.7, base_url=OLLAMA_API_URL)
 # qdrant = QdrantClient(QDRANT_URL)
 
 qdrant = QdrantClient(
-    url="http://192.168.1.24:6333",     
+    url="http://localhost:6333",     
     timeout=30.0,                   
            
 )
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postcard")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "postcard-openai")

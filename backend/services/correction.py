@@ -1,6 +1,6 @@
 from config.db import get_preferences, save_preferences
 import json
-from utils.helpers import send_to_llm
+from utils.helpers import send_to_openai
 
 def correction_node(state: dict):
     user_query = state.get("user_query", "")
@@ -32,7 +32,7 @@ Respond in this JSON format:
   }}
 }}
 """
-    response = send_to_llm(correction_prompt)
+    response = send_to_openai(correction_prompt)
     print(f"🔍 Correction LLM Response: {response}")
 
     try:

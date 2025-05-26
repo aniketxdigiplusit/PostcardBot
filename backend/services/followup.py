@@ -3,7 +3,7 @@
 from langchain.schema import HumanMessage
 from config.settings import sllm  # Your LLM client
 import logging
-from utils.helpers import system_prompt, send_to_llm
+from utils.helpers import system_prompt, send_to_openai
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ Return follow-up suggestions as a plain bullet list. Nothing else.
 """
 
     try:
-        result = send_to_llm(prompt)  # This may return a string or Langchain LLM object
+        result = send_to_openai(prompt)  # This may return a string or Langchain LLM object
         # Handle both cases
         if hasattr(result, "content"):
             output_text = result.content

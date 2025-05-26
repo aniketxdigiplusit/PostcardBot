@@ -1,11 +1,12 @@
 from langchain.schema import HumanMessage
 from qdrant_client import QdrantClient
-from utils.helpers import system_prompt,send_to_llm,send_to_llm
+from utils.helpers import system_prompt,send_to_openai,send_to_openai
 from config.settings import llm, qdrant, COLLECTION_NAME, OLLAMA_API_URL
 import numpy as np
 import logging
 import requests
 from typing import List
+from utils.helpers import client
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ Output only the hotel name or "None".
 """
 
     try:
-        response = send_to_llm(prompt)  # Call LLM function
+        response = send_to_openai(prompt)  # Call LLM function
         hotel_name = response.strip()
         print(f"Extracted Hotel Name: {hotel_name}")  # Debugging line
         
@@ -133,39 +134,26 @@ def hotel_followup(state: dict):
     return {**state, "chatbot_response": response_text, "search_results": [hotel_data]}
 
 
-
 def generate_embedding(text: str) -> List[float]:
-    """Generate embedding using nomic-embed-text model with robust error handling."""
-    
+    """Generate embedding using OpenAI Embedding API."""
     if not text.strip():
         logger.warning("generate_embedding() called with empty text.")
         return []
 
-    context = f"Travel query context: User Input: {text}"
-    
-    embedding_url = f"{OLLAMA_API_URL}/api/embeddings"
-    payload = {"model": "nomic-embed-text", "prompt": context}
-
     try:
-        response = requests.post(embedding_url, json=payload, timeout=30)
-        response.raise_for_status()
+        response = client.embeddings.create(
+            model="text-embedding-3-small",  # You can use other embedding models if needed
+            input=text.strip()
+        )
 
-        embedding = response.json().get("embedding", [])
-
+        embedding = response.data[0].embedding if response.data else []
+        
         if not embedding:
-            logger.warning("Empty embedding generated for input text.")
+            logger.warning("Empty embedding received from OpenAI.")
             return []
 
         return embedding
 
-    except requests.exceptions.Timeout:
-        logger.error("Embedding request timed out.")
-        return []
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Embedding API request error: {e}")
-        return []
-
     except Exception as e:
-        logger.error(f"Unexpected error in generate_embedding(): {e}")
+        logger.error(f"Error generating embedding via OpenAI: {e}")
         return []

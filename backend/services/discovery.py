@@ -1,7 +1,7 @@
 import json
 import requests
 from typing import List, Dict
-from utils.helpers import send_to_llm, send_to_llm
+from utils.helpers import send_to_openai, send_to_openai
 from config.settings import qdrant
 from services.hotel import generate_embedding, cosine_similarity
 from services.chat_db import get_chat_messages
@@ -42,7 +42,7 @@ from services.followup import generate_followups_from_response
 # -Dont ask things already filled in preferences
 # """
 
-#     response = send_to_llm(prompt)
+#     response = send_to_openai(prompt)
 
 #     return {**state, "chatbot_response": response}
 
@@ -104,7 +104,7 @@ Your task:
 Return only the follow-up message to show the user.
         """
 
-        response = send_to_llm(prompt)
+        response = send_to_openai(prompt)
         return {
             **state,
             "followup": response.strip(),
@@ -160,7 +160,7 @@ Use soft language, for example:
 
 Do not repeat what was already said. Ask just one thing at a time.
 """
-        response = send_to_llm(prompt)
+        response = send_to_openai(prompt)
         followups = generate_followups_from_response(response, [], state.get("user_query", ""))
         return {
             **state,
@@ -194,7 +194,7 @@ Kindly ask them:
 
 Keep your tone warm and curious. Don’t repeat what’s already known. Return only the question.
 """
-    response = send_to_llm(prompt)
+    response = send_to_openai(prompt)
     followups = generate_followups_from_response(response, [], state.get("user_query", ""))
     thread_id = state.get("thread_id")
     prefs = get_preferences(thread_id) or {}
@@ -240,7 +240,7 @@ Pick one of the following values as the most important to the user right now:
 
 Only output one of the above values. No explanation.
 """
-    priority = send_to_llm(prompt).strip().lower()
+    priority = send_to_openai(prompt).strip().lower()
 
     if priority not in ["location", "activities", "months", "prices"]:
         priority = "location"  
@@ -290,7 +290,7 @@ def basic_property_search(preferences, resolved_priority=None):
         collection_name="postcard-openai",
         scroll_filter=None,
         with_payload=True,
-        limit=300,
+        limit=200,
         with_vectors=False,
     )
 

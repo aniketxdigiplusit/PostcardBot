@@ -6,7 +6,7 @@ from langchain.schema import SystemMessage, HumanMessage
 from langchain.prompts import PromptTemplate
 from config.settings import sllm
 from embeddings import semantic_match, location_labels, location_vectors, activity_labels, activity_vectors
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai, send_to_llm
+from utils.helpers import system_prompt, send_to_openai, send_to_azure_openai, send_to_openai
 from services.hotel import generate_embedding
 from config.db import  get_preferences, save_preferences
 
@@ -49,7 +49,7 @@ def chunk_text(text, chunk_size=2, overlap=1):
 # -If the user says" I dont want to do boating anymore i want to do trekking", the system should respond with "replace".
 # """
 
-#     response = send_to_llm(crud_prompt)
+#     response = send_to_openai(crud_prompt)
 #     print("🧠 CRUD decision:", response)
 #     decision = response.strip().lower()
 #     if decision not in ["merge", "replace", "ignore"]:
@@ -106,7 +106,7 @@ DO NOT GIVE ANY EXPLANATION
         last_2=json.dumps(last_2, indent=2)
     )
 
-    response = send_to_llm(rendered_prompt)
+    response = send_to_openai(rendered_prompt)
     print(response)
 
     clean_json = re.sub(r"^```(?:json)?|```$", "", response.strip(), flags=re.IGNORECASE).strip()
@@ -383,7 +383,7 @@ Ask a friendly follow-up question that nudges the user to pick one of these, but
 
 Return only your conversational reply.
 """
-    response = send_to_llm(prompt)
+    response = send_to_openai(prompt)
     return response.strip()
 
 def detect_missing_priority(state: dict):

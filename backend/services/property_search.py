@@ -1,6 +1,6 @@
 from services.hotel import generate_embedding, cosine_similarity
 from config.settings import qdrant
-from utils.helpers import send_to_llm, send_to_llm
+from utils.helpers import send_to_openai, send_to_openai
 from config.db import get_preferences
 import numpy as np
 import random
@@ -45,7 +45,7 @@ def rewrite_query_with_preferences(user_query, prefs):
         f"Rewrite the query to include preferences clearly without losing the user's original intent. Write in one line"
     )
 
-    response = send_to_llm(new_prompt)
+    response = send_to_openai(new_prompt)
     rewritten_query = response.strip()
     print("📝 Rewritten Query:", rewritten_query)
 
@@ -78,7 +78,7 @@ def retrieve_properties(state: dict):
 
     # ----------- Qdrant Search -----------
     results = qdrant.query_points(
-        collection_name="postcard",
+        collection_name="postcard-openai",
         query=query_vector,
         limit=100,
         # using="activity_vector",

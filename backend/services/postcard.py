@@ -1,4 +1,4 @@
-from utils.helpers import send_to_llm, send_to_llm
+from utils.helpers import send_to_openai, send_to_openai
 
 def explain_postcard_travel(user_query):
     prompt = f"""
@@ -28,7 +28,7 @@ Mention:
 -Only mention what is relevant to the user query and not everything.
 Avoid sounding robotic. Return a single paragraph answer of about 2 to 3 lines.
 """
-    response = send_to_llm(prompt)
+    response = send_to_openai(prompt)
     return response.strip()
 
 def explain_about_postcard(state: dict):

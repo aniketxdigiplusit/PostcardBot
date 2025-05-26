@@ -1,7 +1,7 @@
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_llm
+from utils.helpers import system_prompt, send_to_openai, send_to_openai
 from services.hotel import extract_hotel_name_from_query
 import logging
 
@@ -39,7 +39,7 @@ Output only the classification value: greeting, hotel_followup, normal or about.
 Do not explain.
 Do not output anything else.
 """
-    response= send_to_llm(classification_prompt)  # Call LLM function
+    response= send_to_openai(classification_prompt)  # Call LLM function
     classification = response.lower().strip()
     print(f"Classification: {classification}")  # Debugging line
 

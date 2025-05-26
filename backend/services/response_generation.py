@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
 from config.settings import llm
-from utils.helpers import system_prompt, send_to_llm, send_to_azure_openai
+from utils.helpers import system_prompt, send_to_openai, send_to_azure_openai
 from services.chat_db import save_message
 import logging
 from services.followup import generate_followups_from_response
@@ -54,7 +54,7 @@ def get_more_info(state: dict):
         "Answer the query naturally, as if you are talking to the user.\n\n"
     )
     
-    response = send_to_llm(prompt_message)  # Call LLM function
+    response = send_to_openai(prompt_message)  # Call LLM function
     followups = generate_followups_from_response(response, [], state.get("user_query", ""))
     print(f"followups: {followups}")  # Debugging line
     # response = send_to_azure_openai(prompt_message)  # Call OpenAI LLM function
@@ -134,7 +134,7 @@ def handle_hotel_followup(user_query, hotel_name, postcards, state):
         price_info=state.get("price_info", "Price not available")
     )
     
-    response = send_to_llm(prompt_message)
+    response = send_to_openai(prompt_message)
     followups = generate_followups_from_response(response, [], user_query)
     return {**state, "chatbot_response": response, "followups": followups,}
 
@@ -166,7 +166,7 @@ def handle_property_search(user_query, search_results, state):
         f"{get_follow_up_instruction(state)}"
     )
     
-    response = send_to_llm(prompt_message)
+    response = send_to_openai(prompt_message)
     followups = generate_followups_from_response(response, [], user_query)
     return {**state, "chatbot_response": response, "followups": followups,}
 
