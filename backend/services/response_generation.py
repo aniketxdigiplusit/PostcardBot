@@ -16,29 +16,7 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-def fetch_postcards(album_id):
-    params = {
-        "filters[album][id][$eq]": album_id,  # Correct Strapi filter format
-        "filters[isComplete][$eq]": True,  # Correct Strapi filter format
-        "fields[0]": "id",
-        "fields[1]": "name",
-        "fields[2]": "intro",
-        "fields[3]": "slug",
-    }
 
-    url = "https://development-api.postcard.travel/api/postcards"
-
-    response = requests.get(url, params=params)
-
-    try:
-        data = response.json()
-        # print(data)
-        if response.status_code == 200 and "data" in data:
-            return data["data"]
-    except Exception as e:
-        print(f"Error parsing response: {e}")
-
-    return []
 
 def get_more_info(state: dict):
     """

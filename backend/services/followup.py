@@ -32,13 +32,13 @@ Rules:
 - Keep each suggestion under 12 words.
 - Be relevant to the current assistant message.
 - Avoid vague or repetitive questions.
-- Focus on travel properties, experiences, postcards, destinations, best time to go, or budgets.
+- Only frame questions on travel properties, experiences, postcards, destinations, best time to go, or budgets.
+-If the current query is suggesting hotels always have atleast 1-2 response as tell me more about the first hotel.
 
 Examples:
 • Tell me more about Windermere hotel
 • What’s the best time to visit Bhutan?
 • Show me experiences in Rishikesh
-• Are there romantic getaways in that region?
 • Explore similar postcards
 
 Return follow-up suggestions as a plain bullet list. Nothing else.

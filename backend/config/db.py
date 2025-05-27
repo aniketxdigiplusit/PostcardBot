@@ -29,7 +29,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-
+init_db()
 
 def save_preferences(thread_id, location=None, activities=None, months=None, prices=None, resolved_priority=None, asked_resolve_priority=False):
     print(f"🧠 Saving preferences to DB for thread_id: {thread_id}")

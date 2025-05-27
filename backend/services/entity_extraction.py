@@ -84,6 +84,7 @@ Extract only the information directly mentioned by the user.
 - Do not extract months as the season.
 -Do not extract words like location , place, city as possible location.
 -Extract direct words in query like location, activities , time to travel, prices as resolved priority
+-Extract is one word location or activity in user query.
 
 Output a valid JSON object only :
 

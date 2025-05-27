@@ -53,9 +53,9 @@ Do not output anything else.
     state["query_type"] = classification
 
     # ✅ Additional handling if hotel followup
-    if classification == "hotel_followup":
-        hotel_name = extract_hotel_name_from_query(user_query)
-        if hotel_name and hotel_name.lower() != "none":
-            state["hotel_name"] = hotel_name
+    # if classification == "hotel_followup":
+    #     hotel_name = extract_hotel_name_from_query(user_query)
+    #     if hotel_name and hotel_name.lower() != "none":
+    #         state["hotel_name"] = hotel_name
 
     return state

@@ -64,34 +64,40 @@ def hotel_followup(state: dict):
     logger.info(f"🔍 Searching for hotels matching: {hotel_name}")
 
     query_embedding = generate_embedding(hotel_name)
+    print("Embeddings created")
 
     search_results = qdrant.search(
         collection_name=COLLECTION_NAME,
         query_vector=query_embedding,
         limit=200,
-        with_payload=True
+        with_payload=True,
+        with_vectors=True  # Ensure extra_vectors are returned
     )
 
     if not search_results:
         return {**state, "chatbot_response": f"No hotels found for '{hotel_name}'."}
+    
+    print("200 search results")
 
-    # -----------------------
-    # Weighted Similarity Matching (only name & intro)
-    # -----------------------
     best_result = None
     best_score = 0
 
     for res in search_results:
         payload = res.payload
+        vectors = res.vector if hasattr(res, "vector") else {}
 
-        name_sim = cosine_similarity(query_embedding, generate_embedding(payload.get("name", ""))) * FIELD_WEIGHTS["name"]
-        intro_sim = cosine_similarity(query_embedding, generate_embedding(payload.get("intro", ""))) * FIELD_WEIGHTS["intro"]
+        name_embed = res.vectors.get("name") if hasattr(res, "vectors") else payload.get("embedding_name", [])
+        intro_embed = res.vectors.get("intro") if hasattr(res, "vectors") else payload.get("embedding_intro", [])
+
+        name_sim = cosine_similarity(query_embedding, name_embed or []) * FIELD_WEIGHTS["name"]
+        intro_sim = cosine_similarity(query_embedding, intro_embed or []) * FIELD_WEIGHTS["intro"]
 
         total_score = (name_sim + intro_sim) / sum(FIELD_WEIGHTS.values())
 
         if total_score > best_score:
             best_result = res
             best_score = total_score
+
     print("best result", best_result)
 
     if not best_result:
@@ -108,11 +114,8 @@ def hotel_followup(state: dict):
     postcards = hotel_data.get("postcards", [])
     best_time_to_travel = hotel_data.get("bestTimetoTravel", "")
     hotel_intro = hotel_data.get("intro", "")
-    price= hotel_data.get("price", "")
+    price = hotel_data.get("price", hotel_data.get("pricesStartingAt", ""))
 
-    # -----------------------
-    # Response
-    # -----------------------
     response_lines = [
         f"🏨 **{hotel_real_name}**",
         f"📍 {hotel_intro}",
@@ -129,31 +132,32 @@ def hotel_followup(state: dict):
             name = card.get('name', 'Unnamed Experience')
             intro = card.get('intro', 'No description provided.')
             response_lines.append(f"{idx}. **{name}**: {intro}")
+
     response_text = "\n".join(response_lines)
 
     return {**state, "chatbot_response": response_text, "search_results": [hotel_data]}
 
-
-def generate_embedding(text: str) -> List[float]:
-    """Generate embedding using OpenAI Embedding API."""
+def generate_embedding(text: str):
+    """Generate embedding using OpenAI text-embedding-ada-002 model."""
+ 
     if not text.strip():
-        logger.warning("generate_embedding() called with empty text.")
+        print("generate_embedding() called with empty text.")
         return []
-
+ 
     try:
         response = client.embeddings.create(
-            model="text-embedding-3-small",  # You can use other embedding models if needed
+            model="text-embedding-ada-002",
             input=text.strip()
         )
-
-        embedding = response.data[0].embedding if response.data else []
-        
+ 
+        embedding = response.data[0].embedding
+ 
         if not embedding:
-            logger.warning("Empty embedding received from OpenAI.")
+            print("Empty embedding generated for input text.")
             return []
-
+ 
         return embedding
-
+ 
     except Exception as e:
-        logger.error(f"Error generating embedding via OpenAI: {e}")
+        print(f"Unexpected error in generate_embedding(): {e}")
         return []
