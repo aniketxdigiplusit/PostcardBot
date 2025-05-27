@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from models import db
+from config.db import init_db
 from models import ChatHistory  
 from routes.chat_routes import chat_blueprint, chat_api
 from flask_cors import CORS
@@ -21,6 +22,7 @@ migrate = Migrate(app, db)
 
 app.register_blueprint(chat_blueprint, url_prefix="/chat")
 app.register_blueprint(chat_api)
+init_db()
 
 
 if __name__ == "__main__":
