@@ -46,11 +46,7 @@ def create_chat_graph():
                   "explain_about_postcard" if s.get("query_type") == "about" else
                   "normalize_entities"
     )
-    # graph.add_conditional_edges(
-    #     "normalize_entities",
-    #     lambda s: "extract_resolved_priority" if  s.get("discovery_mode") and not s.get("resolved_priority") and s.get("asked_resolve_priority") is True
-    #     else "extract_info"
-    # )
+ 
 
     graph.add_edge("normalize_entities", "extract_info")
 

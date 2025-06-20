@@ -291,16 +291,49 @@ def basic_property_search(preferences, resolved_priority=None):
         scroll_filter=None,
         with_payload=True,
         limit=200,
-        with_vectors=False,
+        with_vectors=True,  # Retrieve vectors as well
     )
 
-    # Embeddings
-    user_location_embedding = generate_embedding(" ".join([loc[0] for loc in location_prefs])) if location_prefs else None
+    # Prepare preferences embeddings by fetching precomputed embeddings from Qdrant
+    user_location_embedding = None
+    user_activity_embedding = None
+    user_month_embedding = None
 
-    user_activity_embedding = generate_embedding(" ".join([act[0] for act in activity_prefs])) if activity_prefs else None
+    if location_prefs:
+        location_str = " ".join([loc[0] for loc in location_prefs])
+        location_search_results = qdrant.search(
+            collection_name="postcard-openai",
+            query_vector=generate_embedding(location_str),
+            limit=1,
+            with_payload=False,
+            with_vectors=True,
+        )
+        if location_search_results:
+            user_location_embedding = location_search_results[0].vector
 
-    user_month_embedding = generate_embedding(" ".join(map(str, month_prefs))) if month_prefs else None
+    if activity_prefs:
+        activity_str = " ".join([act[0] for act in activity_prefs])
+        activity_search_results = qdrant.search(
+            collection_name="postcard-openai",
+            query_vector=generate_embedding(activity_str),
+            limit=1,
+            with_payload=False,
+            with_vectors=True,
+        )
+        if activity_search_results:
+            user_activity_embedding = activity_search_results[0].vector
 
+    if month_prefs:
+        month_str = " ".join(map(str, month_prefs))
+        month_search_results = qdrant.search(
+            collection_name="postcard-openai",
+            query_vector=generate_embedding(month_str),
+            limit=1,
+            with_payload=False,
+            with_vectors=True,
+        )
+        if month_search_results:
+            user_month_embedding = month_search_results[0].vector
 
     # 🔧 Set dynamic weights
     weights = {
@@ -313,8 +346,8 @@ def basic_property_search(preferences, resolved_priority=None):
     # Prioritize the resolved_priority more heavily
     if resolved_priority in weights:
         for key in weights:
-            weights[key] = 0.2  # spread default
-        weights[resolved_priority] = 0.8 # boost selected priority
+            weights[key] = 0.2  # Spread default
+        weights[resolved_priority] = 0.8  # Boost selected priority
 
     candidates = []
 
@@ -325,7 +358,7 @@ def basic_property_search(preferences, resolved_priority=None):
         # --- Location matching ---
         prop_location = (payload.get("region", "") + " " + payload.get("country", "")).strip()
         if prop_location and user_location_embedding:
-            location_embedding = generate_embedding(prop_location)
+            location_embedding = point.vector  # Get the stored location embedding
             loc_score = cosine_similarity(location_embedding, user_location_embedding)
             score += loc_score * weights["location"]
 
@@ -333,14 +366,14 @@ def basic_property_search(preferences, resolved_priority=None):
         prop_activities = payload.get("activities", [])
         if prop_activities and user_activity_embedding:
             act_text = " ".join(prop_activities)
-            act_embedding = generate_embedding(act_text)
-            act_score = cosine_similarity(act_embedding, user_activity_embedding)
+            activity_embedding = point.vector  # Get the stored activity embedding
+            act_score = cosine_similarity(activity_embedding, user_activity_embedding)
             score += act_score * weights["activities"]
 
         # --- Months matching ---
         prop_best_time = payload.get("bestTimetoTravel", "")
         if prop_best_time and user_month_embedding:
-            best_time_embedding = generate_embedding(prop_best_time)
+            best_time_embedding = point.vector  # Get the stored best time embedding
             month_score = cosine_similarity(best_time_embedding, user_month_embedding)
             score += month_score * weights["months"]
 
@@ -378,6 +411,7 @@ def basic_property_search(preferences, resolved_priority=None):
         print(f"🏨 {payload.get('name')} — {payload.get('region')}, {payload.get('country')} | score: {c['score']:.2f}")
 
     return results
+
 
 
 def retrieve_discovery_properties(state: dict):

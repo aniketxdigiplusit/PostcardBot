@@ -11,6 +11,7 @@ from services.chat_db import save_message
 import logging
 from services.followup import generate_followups_from_response
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +45,12 @@ def get_more_info(state: dict):
         "followups": followups,
         "need_more_input": True
     }
+def shorten_query(query, max_tokens=3000):
+    # Split the query into words and check if it exceeds the limit
+    tokens = query.split()
+    if len(tokens) > max_tokens:
+        query = " ".join(tokens[:max_tokens])
+    return query
 
 def generate_response(state: dict):
     if not isinstance(state, dict):
@@ -62,8 +69,7 @@ def generate_response(state: dict):
     print(f"price_info: {price_info}")
 
     rewritten_query = state.get("rewritten_query", "")
-    
-    print(f"Searching for postcards for hotel: {hotel_name}")
+    print (f"Rewritten Query: {rewritten_query}")
 
     if hotel_name and postcards:
         return handle_hotel_followup(user_query, hotel_name, postcards, state)
@@ -122,31 +128,47 @@ def handle_property_search(user_query, search_results, state):
 
     
     prompt_message = (
-        f"The user said: {user_query}\n\n"
-        f"Priority selected by the user: **{priority}**\n"
-        "Here are users preferences:\n"
-        f"Location: {state.get('location')}\n"
-        f"Activities: {state.get('activities')}\n"
-        f"Best time to travel: {state.get('best_time_to_travel')}\n"
-        f"Budget: {state.get('prices')}\n\n"
-        "The user is looking for properties that match their travel interests.\n\n"
-        "You have a list of properties that closest match the user's query.\n\n"
-        "Here are some matching properties in JSON format:\n"
-        f"{json.dumps(search_results, indent=2)}\n\n"
-        "Answer with respect to the user's preferences.\n"
-        "For each property, write a bullet point starting with the property name in **bold**, followed by its region and country.\n"
-        "If the property does not match one or more of the user's interests, mention why you are providing it and how is it relevant.\n"
-        "Describe it naturally, highlighting its setting, vibe, and special experiences.\n"
-        "Respond and suggest like you are talking to the user in a friendly, conversational tone.\n"
-        "Include a **Postcards** section listing its postcards with a brief introduction.\n"
-        "Add some emojis to make it more engaging.\n\n"
+        f"User's Query: {user_query}\n\n"
+    f"Based on what the user is asking, here is the relevant information to help with the response:\n"
+    f"**User Preferences (only relevant if needed):**\n"
+    f"Location: {state.get('location', 'Not specified')}\n"
+    f"Activities: {state.get('activities', 'Not specified')}\n"
+    f"Best time to travel: {state.get('best_time_to_travel', 'Not specified')}\n"
+    f"Budget: {state.get('prices', 'Not specified')}\n\n"
+    
+    "Your task is to respond directly to the user's query. Use the following property details to answer their question:\n"
+    "Here are some properties that closely match the user's query (in JSON format):\n"
+    f"{json.dumps(search_results, indent=2)}\n\n"
+    
+    "Answer directly based on the user's query. If necessary, briefly mention preferences that are relevant, but focus on the user's query.\n"
+    "For each property, include the following details:\n"
+    "- Start with the property name in **bold**.\n"
+    "- Mention the **region** and **country**.\n"
+    "- Describe the **setting, vibe**, and **special experiences** that match the user's interests.\n"
+    "- If the property does not fully align with the user's preferences, explain how it's still relevant and why it's being included.\n"
+    "- Include a **Postcards** section to highlight the experiences available at the property, along with a brief introduction.\n"
+    "- Use emojis to make the response more engaging and friendly.\n\n"
 
-        f"{get_follow_up_instruction(state)}"
+    "Your goal is to provide a concise, conversational response that helps the user make an informed decision."
+
+       
     )
     
-    response = send_to_openai(prompt_message)
-    followups = generate_followups_from_response(response, [], user_query)
-    return {**state, "chatbot_response": response, "followups": followups,}
+    prompt_message = shorten_query(prompt_message)
+
+    try:
+        response = send_to_openai(prompt_message)
+        if not response:
+            raise ValueError("Received empty response from OpenAI.")
+
+        followups = generate_followups_from_response(response, [], user_query)
+        return {**state, "chatbot_response": response, "followups": followups}
+    except openai.error.RateLimitError:
+        print("⚠️ Rate limit exceeded! Please try again later.")
+        return {**state, "chatbot_response": "Sorry, I'm currently unable to process your request due to a high volume of traffic. Please try again later."}
+    except Exception as e:
+        print(f"⚠️ Error generating response: {e}")
+        return {**state, "chatbot_response": "An error occurred. Please try again."}
 
 # def enrich_results_with_postcards(search_results):
 #     for result in search_results:

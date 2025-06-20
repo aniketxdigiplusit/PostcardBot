@@ -80,7 +80,7 @@ def retrieve_properties(state: dict):
     results = qdrant.query_points(
         collection_name="postcard-openai",
         query=query_vector,
-        limit=100,
+        limit=250,
         # using="activity_vector",
         with_payload=True
     )
@@ -123,9 +123,10 @@ def retrieve_properties(state: dict):
 
         sims = []
         if stage == "property" and user_query:
+    # Retrieve precomputed embeddings for properties from Qdrant
             sims = [
-            max([cosine_similarity(query_vector, generate_embedding(c.get(field, ""))) for field in SEARCH_FIELDS["property"]])
-            for c in candidates
+                max([cosine_similarity(query_vector, c.get("embedding_name", [])) for field in SEARCH_FIELDS["property"]])
+                for c in candidates
             ]
             candidates = top_k(candidates, sims, 10)
             print("🔍 Matched Property Labels:", [c.get("name") for c in candidates])
@@ -143,8 +144,9 @@ def retrieve_properties(state: dict):
             ]
 
         elif stage == "postcard" and user_query:
+    # Retrieve precomputed embeddings for postcards from Qdrant
             sims = [
-                max([cosine_similarity(query_vector, generate_embedding(p.get(field, ""))) for p in c.get("postcards", []) for field in SEARCH_FIELDS["postcard"]], default=0)
+                max([cosine_similarity(query_vector, c.get("embedding_postcards", [])) for p in c.get("postcards", [])], default=0)
                 for c in candidates
             ]
             candidates = top_k(candidates, sims, 20)

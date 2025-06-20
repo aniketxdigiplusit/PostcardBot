@@ -8,6 +8,7 @@ from routes.chat_routes import chat_blueprint, chat_api
 from flask_cors import CORS
 from qdrant_client import QdrantClient
 from routes.chat_routes import get_site_stats_from_qdrant
+from decode import jwt_required
 
 
 app = Flask(__name__)

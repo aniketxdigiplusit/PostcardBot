@@ -104,7 +104,18 @@ def hotel_followup(state: dict):
         return {**state, "chatbot_response": f"Sorry, I couldn't find a good match for '{hotel_name}'."}
 
     hotel_data = best_result.payload
-    state["price_info"] = hotel_data.get("pricesStartingAt", "Price not available")
+      # Ensure price extraction works properly
+    price = hotel_data.get("pricesStartingAt", hotel_data.get("price", "Price not available"))
+
+    # If price is a string like "$150", clean the string to extract the numeric value
+    if isinstance(price, str):
+        price = price.replace("$", "").replace(",", "").strip()  # Clean the price string
+        if price.isdigit():
+            price = int(price)  # Convert to an integer
+        else:
+            price = "Price not available"
+
+    state["price_info"] = price
     state["hotel_name"] = hotel_name
     state["hotel_intro"] = hotel_data.get("intro", "")
     state["postcards"] = hotel_data.get("postcards", [])
@@ -122,7 +133,7 @@ def hotel_followup(state: dict):
         f"🕒 Best time to visit: {best_time_to_travel}",
         f"💰 Estimated Price: {price}",
         "",
-        "✨ **Experiences & Postcards:**"
+        f"✨ **Experiences & Postcards: {postcards}"
     ]
 
     if not postcards:

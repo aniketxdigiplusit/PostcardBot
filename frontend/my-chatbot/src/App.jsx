@@ -19,12 +19,13 @@ export default function App() {
     const [topProperties, setTopProperties] = useState([]);
     const [moreProperties, setMoreProperties] = useState([]);
     const [followups, setFollowups] = useState([]);
+    const [authKey] = useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDEwMSwiaWF0IjoxNzQ5NzEwMzU5LCJleHAiOjE3NTAzMTUxNTl9.KnLl55zvGR2XXrHXGBun8NlGXyRbHO7vlXkh6PnRtso"); // Replace with your actual auth key if needed
 
 
 
 
 
-    const threadId = "245";
+    const threadId = "246";
 
         
   
@@ -56,7 +57,8 @@ export default function App() {
   try {
     const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
       query: input,
-      priority_field: priority
+      priority_field: priority,
+      auth_key: authKey,
     });
     console.log("🟢 Backend returned:", res.data);
 
@@ -73,13 +75,19 @@ export default function App() {
     }
 
   } catch (err) {
-    console.error("❌ Error:", err);
-    setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
-    setFollowups([]);
-  } finally {
-    setLoading(false);
-    setInput("");
-  }
+        console.error("❌ Error:", err);
+
+        // Check if error is due to rate-limiting (HTTP Status Code 429)
+        if (err.response && err.response.status === 429) {
+            setMessages(prev => [...prev, { sender: "bot", text: "Rate limit exceeded. Please try again later." }]);
+        } else {
+            setMessages(prev => [...prev, { sender: "bot", text: "Error talking to backend." }]);
+        }
+        setFollowups([]);
+    } finally {
+        setLoading(false);
+        setInput("");
+    }
 };
 
 
@@ -150,7 +158,8 @@ export default function App() {
   try {
     const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
       query: text,
-      priority_field: priority
+      priority_field: priority,
+        auth_key: authKey,
     });
 
     setMessages(prev => [...prev, { sender: "bot", text: res.data.response }]);
@@ -173,13 +182,14 @@ export default function App() {
 };
 
 
-    const handleFollowupClick = async (text) => {
+const handleFollowupClick = async (text) => {
   setMessages(prev => [...prev, { sender: "user", text }]);
   setLoading(true);
 
   try {
     const res = await axios.post(`http://localhost:5000/chat/${threadId}`, {
-      query: text // ❌ No priority field here
+      query: text,
+    auth_key: authKey,
     });
 
     const botResponse = res.data.chatbot_response || res.data.response || "No response from LLM.";

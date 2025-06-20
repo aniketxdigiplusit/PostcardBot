@@ -88,48 +88,28 @@ def get_preferences(thread_id):
         return None
 
 
+import sqlite3
+from datetime import datetime
 
+# Database connection setup
+DB_FILE = "rate_limit.db"
 
-# CHAT_DB_PATH = os.path.join(os.path.dirname(__file__), "chat.db")
+def init_db():
+    # Connect to the database (or create it if it doesn't exist)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
 
-# # @app.route("/api/threads", methods=["GET"])
-# # def get_all_thread_ids():
-# #     with sqlite3.connect(CHAT_DB_PATH) as conn:
-# #         cursor = conn.cursor()
-# #         cursor.execute("SELECT DISTINCT thread_id FROM chats")
-# #         threads = [row[0] for row in cursor.fetchall()]
-# #     return jsonify(threads)
+    # Create the rate_limit table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS rate_limit (
+            identifier TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 0,
+            last_reset TEXT
+        )
+    ''')
 
-# # @app.route("/api/chats/<thread_id>", methods=["GET"])
-# # def get_chats_by_thread(thread_id):
-# #     try:
-# #         with sqlite3.connect(CHAT_DB_PATH) as conn:
-# #             cursor = conn.cursor()
-# #             cursor.execute("""
-# #                 SELECT sender, text, timestamp
-# #                 FROM messages
-# #                 WHERE thread_id = ?
-# #                 ORDER BY timestamp ASC
-# #             """, (thread_id,))
-# #             rows = cursor.fetchall()
+    conn.commit()
+    conn.close()
 
-# #         messages = [
-# #             {
-# #                 "sender": row[0],
-# #                 "text": row[1],
-# #                 "timestamp": row[2]
-# #             }
-# #             for row in rows
-# #         ]
-
-# #         return jsonify({
-# #             "thread_id": thread_id,
-# #             "messages": messages
-# #         })
-
-# #     except Exception as e:
-# #         print("Error fetching messages:", e)
-# #         return jsonify({"error": "Internal server error"}), 500
-    
-# # if __name__ == "__main__":
-# #     app.run(debug=True)
+# Initialize the database
+init_db()

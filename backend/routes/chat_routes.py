@@ -1,5 +1,5 @@
 import uuid
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from services.chat_service import create_chat_graph
 from services.chat_db import save_message
 from flask import Blueprint, jsonify
@@ -9,10 +9,20 @@ from flask import request
 from config.settings import qdrant
 from embeddings import location_labels, activity_labels, property_labels
 import random
+from decode import jwt_required, check_rate_limit
 
 
 chat_blueprint = Blueprint("chat", __name__)
+
+chat_api = Blueprint("chat_api", __name__)
 # Initialize Qdrant client
+
+@chat_api.route("/secure", methods=["GET"])
+@jwt_required
+def secure_route():
+    return jsonify({"message": "This is a secure endpoint", "user": g.user})
+
+
 
 def get_site_stats_from_qdrant():
     all_points = []
@@ -131,23 +141,65 @@ def get_startup_messages(input):
 
     return jsonify({"response": "Sorry, I didn't understand your selection."})
 
+@chat_blueprint.route("/message", methods=["POST"])
+@jwt_required
+def handle_chat_message():
+    data = request.get_json()
+    user_message = data.get("message")
+
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+
+    # Access user info from JWT
+    user = g.user  # Example: {'id': 1, 'email': 'user@example.com'}
+
+    # Simulate a chatbot response
+    bot_response = f"Hello {user.get('username', 'User')}, you said: {user_message}"
+
+    return jsonify({
+        "user": user,
+        "bot_response": bot_response
+    })
 
 @chat_blueprint.route("/", methods=["POST"])
+@jwt_required
 def start_chat():
     chat_id = str(uuid.uuid4())
-   
     data = request.json
+
+    user = g.user
+
     original_query = data.get("query", "")
-    priority_field = data.get("priority_field", "")  #  get priority from frontend
+    priority_field = data.get("priority_field", "")
+    ai_message = data.get("ai_response", "")  # this is the markdown AI content
+
+    # ✅ If ai_response is present, save as know more chat without invoking the graph
+    if ai_message:
+        save_message(
+            thread_id=chat_id,
+            user_message="Know More",
+            bot_response=ai_message
+        )
+        return jsonify({
+            "thread_id": chat_id,
+            "user": user,
+            "response": None,
+            "followups": []
+        })
+
+    # ✅ Otherwise, proceed with normal graph execution
+    if not check_rate_limit(user.get("id")):
+        return jsonify({"error": "Rate limit exceeded. Try again in 24 hours."}), 429
 
     graph = create_chat_graph()
     state = {
         "user_query": original_query,
         "thread_id": chat_id,
-        "priority_field": priority_field  # pass it to the state
+        "priority_field": priority_field,
+        "user_id": user.get("id")
     }
-    response = graph.invoke(state) #Runs the bot logic and gets a reply.
-    result = response.get("result", {})
+
+    response = graph.invoke(state)
 
     save_message(
         thread_id=chat_id,
@@ -157,36 +209,41 @@ def start_chat():
 
     return jsonify({
         "thread_id": chat_id,
-        "response": response.get("chatbot_response", ""),"followups": response.get("followups", []) 
+        "user": user,
+        "response": response.get("chatbot_response", ""),
+        "followups": response.get("followups", [])
     })
 
 
-    
 
 
 @chat_blueprint.route("/<chat_id>", methods=["POST"])
+@jwt_required
 def continue_chat(chat_id):
     data = request.json
     original_query = data.get("query", "")
-    priority_field = data.get("priority_field", "")  # ✅ get priority from frontend
-    print("Priority Field Received:", priority_field)
+    priority_field = data.get("priority_field", "")  # get priority from frontend
     result = data.get("result", {})
 
+    user = g.user  # Access user info from JWT
+
+    # Check if the user has exceeded the rate limit for follow-up
+    if not check_rate_limit(user.get("id")):
+        return jsonify({"error": "Rate limit exceeded. Try again in 24 hours."}), 429
 
     state = {
         "user_query": original_query,
         "thread_id": chat_id,
-        "priority_field": priority_field,  # ✅ pass it to the state
-        "followups": result.get("followups", []) 
+        "priority_field": priority_field,
+        "followups": result.get("followups", []),
+        # "user_id": user.get("id")
     }
 
     graph = create_chat_graph()
     response = graph.invoke(state)
-    # ⚡ Wrap response if it's not dict
+    # Wrap response if it's not a dict
     if not isinstance(response, dict):
-        print("⚠️ Response was not a dict. Wrapping...")
         response = {"chatbot_response": str(response)}
-
 
     save_message(
         thread_id=chat_id,
@@ -195,11 +252,12 @@ def continue_chat(chat_id):
     )
 
     return jsonify({
-    "thread_id": chat_id,
-    "response": response.get("chatbot_response", ""),
-    "search_results": response.get("search_results", []),
-    "followups": response.get("followups", [])  # ✅ This was missing
-})
+        "thread_id": chat_id,
+        "response": response.get("chatbot_response", ""),
+        "search_results": response.get("search_results", []),
+        "followups": response.get("followups", []),
+        "user": user 
+    })
 
 
 
